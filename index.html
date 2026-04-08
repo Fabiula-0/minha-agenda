@@ -12,39 +12,51 @@
         .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #666; cursor: pointer; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
 
-        /* Estilo da Separação por Dias */
+        /* Espaçamento dos divisores de dia */
         .dia-divisor { 
-            background: #e2e8f0; padding: 8px 15px; margin-top: 15px;
+            background: #e2e8f0; padding: 10px 15px; 
+            margin: 20px 10px 10px 10px; /* Mais espaço acima do título do dia */
             font-weight: bold; font-size: 0.9rem; color: #475569;
-            text-transform: capitalize; border-radius: 4px;
+            text-transform: capitalize; border-radius: 6px;
         }
         .dia-divisor.hoje { background: #2563eb; color: white; }
 
-        .list { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
-        .item { background: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #2563eb; }
+        /* Ajuste de respiro na lista */
+        .list { display: flex; flex-direction: column; gap: 12px; padding: 10px; } /* Gap aumentado para 12px */
         
-        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 8px; }
+        .item { 
+            background: white; 
+            padding: 16px; /* Aumentado o espaço interno do card */
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+            border-left: 6px solid #2563eb; 
+        }
+        
+        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 10px; }
         .item.past { border-left-color: #94a3b8; opacity: 0.7; background: #f9f9f9; }
         .item.done { border-left-color: #94a3b8; opacity: 0.5; }
         .item.no-date { border-left-color: #f59e0b; }
 
         .info { flex: 1; }
-        .name { font-size: 1rem; color: #1a1a1a; display: block; }
+        .name { font-size: 1.05rem; color: #1a1a1a; display: block; margin-bottom: 4px; }
         .name.riscado { text-decoration: line-through; color: #888; }
-        .time-label { font-size: 0.8rem; color: #666; }
+        .time-label { font-size: 0.85rem; color: #666; font-weight: 500; }
 
-        .actions { display: flex; gap: 10px; align-items: center; }
-        .btn-action { font-size: 1.1rem; cursor: pointer; padding: 5px; }
-        .check-btn { width: 32px; height: 32px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; }
+        .actions { display: flex; gap: 15px; align-items: center; } /* Botões mais afastados */
+        .btn-action { font-size: 1.2rem; cursor: pointer; padding: 5px; }
+        .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: #fff; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000; }
+        input, select { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
         
-        .row { display: flex; gap: 8px; align-items: center; }
-        .time-selects { flex: 1; display: flex; gap: 4px; align-items: center; }
+        .row { display: flex; gap: 10px; align-items: center; }
+        .time-selects { flex: 1; display: flex; gap: 6px; align-items: center; }
 
-        .btn-main { background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
+        .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; margin-top: 5px; }
         .btn-edit { background: #f59e0b; }
         .hidden { display: none; }
     </style>
@@ -79,14 +91,13 @@
             <option value="mensal">Repetir Todo Mês</option>
         </select>
         <button id="btnSalvar" class="btn-main" onclick="adicionar()">AGENDAR</button>
-        <button id="btnCancelarEdicao" class="hidden" onclick="cancelarEdicao()" style="background:#888; color:white; border:none; padding:5px; border-radius:5px;">Cancelar Edição</button>
+        <button id="btnCancelarEdicao" class="hidden" onclick="cancelarEdicao()" style="background:#888; color:white; border:none; padding:8px; border-radius:8px; font-weight:bold;">CANCELAR EDIÇÃO</button>
     </div>
 
 <script>
     let agenda = JSON.parse(localStorage.getItem('agenda_vFinal')) || [];
     let editandoIndex = -1;
     
-    // Popular seletores
     const sh = document.getElementById('selHora');
     const sm = document.getElementById('selMin');
     for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}</option>`;
@@ -97,6 +108,7 @@
         el.classList.add('active');
         document.getElementById('view-agenda').classList.toggle('hidden', tab !== 'agenda');
         document.getElementById('view-banco').classList.toggle('hidden', tab !== 'banco');
+        window.scrollTo(0,0);
     }
 
     function renderizar() {
@@ -105,7 +117,6 @@
         const agora = new Date();
         const hojeStr = agora.toLocaleDateString('pt-BR');
 
-        // Lógica de manter atrasados hoje
         agenda.forEach(item => {
             if (item.timestamp && !item.concluido) {
                 let d = new Date(item.timestamp);
@@ -121,6 +132,11 @@
         listaAg.innerHTML = ''; listaBa.innerHTML = '';
 
         let ultimoDia = "";
+
+        // Criar contêiner de lista para a agenda se não houver
+        let containerAgenda = document.createElement('div');
+        containerAgenda.className = 'list';
+        listaAg.appendChild(containerAgenda);
 
         agenda.forEach((item, index) => {
             const dt = item.timestamp ? new Date(item.timestamp) : null;
@@ -148,10 +164,18 @@
                 const diaAtual = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
                 if (diaAtual !== ultimoDia) {
                     const isHoje = dt.toLocaleDateString('pt-BR') === hojeStr;
-                    listaAg.innerHTML += `<div class="dia-divisor ${isHoje?'hoje':''}">${isHoje?'Hoje - ':''}${diaAtual}</div>`;
+                    const divisor = document.createElement('div');
+                    divisor.className = `dia-divisor ${isHoje?'hoje':''}`;
+                    divisor.innerText = `${isHoje?'Hoje - ':''}${diaAtual}`;
+                    listaAg.appendChild(divisor);
+                    
+                    // Novo contêiner de lista para este novo dia
+                    containerAgenda = document.createElement('div');
+                    containerAgenda.className = 'list';
+                    listaAg.appendChild(containerAgenda);
                     ultimoDia = diaAtual;
                 }
-                listaAg.innerHTML += `<div class="${classe}">${html}</div>`;
+                containerAgenda.innerHTML += `<div class="${classe}">${html}</div>`;
             } else {
                 listaBa.innerHTML += `<div class="item no-date">${html}</div>`;
             }
@@ -165,24 +189,19 @@
         const h = document.getElementById('selHora').value;
         const m = document.getElementById('selMin').value;
         const repetir = document.getElementById('inpRepetir').value;
-
         if (!nome) return;
-
         let ts = null;
         if (data) {
             const [y, mes, d] = data.split('-');
             ts = new Date(y, mes-1, d, h, m).getTime();
         }
-
         const novoItem = { name: nome, timestamp: ts, concluido: false, repetir: repetir };
-
         if (editandoIndex > -1) {
             agenda[editandoIndex] = novoItem;
             cancelarEdicao();
         } else {
             agenda.push(novoItem);
         }
-
         document.getElementById('inpNome').value = '';
         renderizar();
     }
