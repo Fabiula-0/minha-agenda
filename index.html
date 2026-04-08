@@ -20,8 +20,11 @@
 
         .list { display: flex; flex-direction: column; gap: 8px; }
         .item { background: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #2563eb; }
+        
+        /* CORES DE STATUS */
         .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 8px; }
-        .item.done { border-left-color: #94a3b8; opacity: 0.6; }
+        .item.past { border-left-color: #94a3b8; opacity: 0.7; background: #f9f9f9; } /* Cor para horário que já passou */
+        .item.done { border-left-color: #94a3b8; opacity: 0.5; }
         .item.no-date { border-left-color: #f59e0b; }
 
         .info { flex: 1; }
@@ -40,7 +43,7 @@
         .row { display: flex; gap: 8px; align-items: center; }
         .row input[type="date"] { flex: 2; }
         .time-selects { flex: 3; display: flex; gap: 4px; align-items: center; }
-        .time-selects select { padding: 12px 5px; text-align: center; }
+        .time-selects select { padding: 12px 2px; text-align: center; }
 
         button { background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
         .hidden { display: none; }
@@ -90,7 +93,7 @@
 <script>
     let agenda = JSON.parse(localStorage.getItem('agenda_vFinal')) || [];
     
-    // Preencher Dropdowns de Hora e Minuto
+    // Dropdowns
     const sh = document.getElementById('selHora');
     const sm = document.getElementById('selMin');
     for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}</option>`;
@@ -112,11 +115,12 @@
         document.getElementById('txtDia').innerText = agora.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'});
         document.getElementById('txtMes').innerText = agora.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 
+        // Mantém junto tudo que for trabalho/atrasado
         agenda.forEach(item => {
             if (item.timestamp && !item.concluido) {
                 let d = new Date(item.timestamp);
-                let hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
-                if (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() < hoje) {
+                let hojeMeiaNoite = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
+                if (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() < hojeMeiaNoite) {
                     d.setFullYear(agora.getFullYear(), agora.getMonth(), agora.getDate());
                     item.timestamp = d.getTime();
                 }
@@ -128,10 +132,15 @@
 
         agenda.forEach((item, index) => {
             const dataItem = item.timestamp ? new Date(item.timestamp) : null;
-            const diff = dataItem ? (dataItem - agora) / 60000 : null;
+            const diffMinutos = dataItem ? (dataItem - agora) / 60000 : null;
+            
             let classe = 'item';
-            if (item.concluido) classe += ' done';
-            else if (diff !== null && diff > -20 && diff < 20) classe += ' now';
+            if (item.concluido) {
+                classe += ' done';
+            } else if (dataItem) {
+                if (diffMinutos > -20 && diffMinutos < 20) classe += ' now';
+                else if (dataItem < agora) classe += ' past'; // Mudança de cor se o horário já passou
+            }
 
             const card = `
                 <div class="info">
@@ -190,7 +199,7 @@
             const dt = new Date(item.timestamp);
             document.getElementById('inpData').value = dt.toISOString().split('T')[0];
             document.getElementById('selHora').value = dt.getHours().toString().padStart(2, '0');
-            document.getElementById('selMin').value = (Math.round(dt.getMinutes()/5)*5).toString().padStart(2, '0');
+            document.getElementById('selMin').value = (Math.floor(dt.getMinutes()/5)*5).toString().padStart(2, '0');
         }
         agenda.splice(i, 1);
         renderizar();
@@ -203,3 +212,4 @@
 </script>
 </body>
 </html>
+
