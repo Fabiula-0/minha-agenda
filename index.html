@@ -5,116 +5,209 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Minha Agenda</title>
+    <title>Minha Agenda Pro</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-bottom: 210px; }
-        .header { margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        .header h2 { margin: 0; font-size: 1.2rem; text-transform: capitalize; color: #1a1a1a; }
-        .header p { margin: 0; font-size: 0.9rem; color: #666; text-transform: capitalize; }
-        .list { display: flex; flex-direction: column; gap: 8px; }
-        .item { background: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #2563eb; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 240px; }
+        
+        /* Abas */
+        .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
+        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #666; cursor: pointer; }
+        .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
+
+        .header { padding: 15px; margin-bottom: 5px; }
+        .header h2 { margin: 0; font-size: 1.1rem; text-transform: capitalize; }
+        
+        .list { padding: 0 15px; display: flex; flex-direction: column; gap: 8px; }
+        .item { background: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #2563eb; }
         .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 8px; }
         .item.done { border-left-color: #94a3b8; opacity: 0.6; }
+        .item.no-date { border-left-color: #f59e0b; }
+
         .info { flex: 1; }
-        .name { font-size: 1rem; color: #1a1a1a; display: block; }
+        .name { font-size: 1rem; color: #1a1a1a; display: block; margin-bottom: 3px; }
         .name.riscado { text-decoration: line-through; color: #888; }
-        .time-label { font-size: 0.8rem; color: #666; }
-        .actions { display: flex; gap: 10px; align-items: center; }
-        .btn-action { font-size: 1.1rem; cursor: pointer; padding: 5px; }
-        .check-btn { width: 32px; height: 32px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-weight: bold; }
+        .time-label { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 5px; border-radius: 4px; }
+        .repeat-badge { font-size: 0.7rem; color: #2563eb; font-weight: bold; margin-left: 5px; }
+
+        .actions { display: flex; gap: 8px; align-items: center; }
+        .btn-action { font-size: 1.1rem; padding: 5px; }
+        .check-btn { width: 34px; height: 34px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #fff; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; }
-        .row { display: flex; gap: 8px; }
-        .row input { width: 50%; }
-        button { background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
+
+        /* Rodapé Ajustado */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px; border-top: 1px solid #ddd; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 8px; }
+        .row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .row input { margin-bottom: 0; flex: 1; min-width: 0; } /* min-width evita que o campo de hora suma */
+        button { background: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
+        
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h2 id="txtDia"></h2>
-        <p id="txtMes"></p>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('agenda')">📅 Agenda</div>
+        <div class="tab" onclick="switchTab('banco')">💡 Ideias</div>
     </div>
-    <div id="minhaLista" class="list"></div>
+
+    <div id="view-agenda">
+        <div class="header">
+            <h2 id="txtDia"></h2>
+        </div>
+        <div id="listaAgenda" class="list"></div>
+    </div>
+
+    <div id="view-banco" class="hidden">
+        <div class="header"><h2>Banco de Ideias (Sem data)</h2></div>
+        <div id="listaBanco" class="list"></div>
+    </div>
+
     <div class="footer">
         <input type="text" id="inpNome" placeholder="O que você vai fazer?">
         <div class="row">
             <input type="date" id="inpData">
             <input type="time" id="inpHora">
         </div>
-        <button onclick="adicionar()">AGENDAR NA SEQUÊNCIA</button>
+        <select id="inpRepetir">
+            <option value="none">Não repetir</option>
+            <option value="diario">Repetir Todo Dia</option>
+            <option value="semanal">Repetir Toda Semana</option>
+            <option value="mensal">Repetir Todo Mês</option>
+        </select>
+        <button onclick="adicionar()">AGENDAR / GUARDAR</button>
     </div>
+
 <script>
     let agenda = JSON.parse(localStorage.getItem('agenda_vFinal')) || [];
+    let currentTab = 'agenda';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        if(tab === 'agenda') {
+            document.getElementById('view-agenda').classList.remove('hidden');
+            document.getElementById('view-banco').classList.add('hidden');
+        } else {
+            document.getElementById('view-agenda').classList.add('hidden');
+            document.getElementById('view-banco').classList.remove('hidden');
+        }
+        renderizar();
+    }
+
     function renderizar() {
-        const listaDiv = document.getElementById('minhaLista');
+        const listaAg = document.getElementById('listaAgenda');
+        const listaBa = document.getElementById('listaBanco');
         const agora = new Date();
-        document.getElementById('txtDia').innerText = agora.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'});
-        document.getElementById('txtMes').innerText = agora.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+        
+        document.getElementById('txtDia').innerText = agora.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+
+        // Lógica de Transferir atrasados não concluídos para hoje
         agenda.forEach(item => {
-            let dataItem = new Date(item.timestamp);
-            let hojeMeiaNoite = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
-            let itemMeiaNoite = new Date(dataItem.getFullYear(), dataItem.getMonth(), dataItem.getDate()).getTime();
-            if (!item.concluido && itemMeiaNoite < hojeMeiaNoite) {
-                dataItem.setFullYear(agora.getFullYear(), agora.getMonth(), agora.getDate());
-                item.timestamp = dataItem.getTime();
+            if (item.timestamp && !item.concluido) {
+                let d = new Date(item.timestamp);
+                let hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
+                let itemD = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+                if (itemD < hoje) {
+                    d.setFullYear(agora.getFullYear(), agora.getMonth(), agora.getDate());
+                    item.timestamp = d.getTime();
+                }
             }
         });
-        agenda.sort((a, b) => a.timestamp - b.timestamp);
-        listaDiv.innerHTML = '';
+
+        agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
+
+        listaAg.innerHTML = '';
+        listaBa.innerHTML = '';
+
         agenda.forEach((item, index) => {
-            const dataItem = new Date(item.timestamp);
-            const diff = (dataItem - agora) / 60000;
-            let classeEstilo = '';
-            if (item.concluido) classeEstilo = 'done';
-            else if (diff > -20 && diff < 20) classeEstilo = 'now';
-            const dataFmt = dataItem.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
-            const horaFmt = dataItem.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-            listaDiv.innerHTML += `
-                <div class="item ${classeEstilo}">
-                    <div class="info">
-                        <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                        <span class="time-label">${dataFmt} • ${horaFmt}</span>
-                    </div>
-                    <div class="actions">
-                        <span class="btn-action" onclick="editar(${index})">✏️</span>
-                        <span class="btn-action" onclick="excluir(${index})">🗑️</span>
-                        <div class="check-btn ${item.concluido ? 'active' : ''}" onclick="toggle(${index})">
-                            ${item.concluido ? '✓' : ''}
-                        </div>
-                    </div>
+            const hasDate = !!item.timestamp;
+            const itemContent = `
+                <div class="info">
+                    <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
+                    ${hasDate ? `<span class="time-label">${new Date(item.timestamp).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-label">Sem data definida</span>'}
+                    ${item.repetir !== 'none' ? `<span class="repeat-badge">🔁 ${item.repetir}</span>` : ''}
+                </div>
+                <div class="actions">
+                    <span class="btn-action" onclick="editar(${index})">✏️</span>
+                    <span class="btn-action" onclick="excluir(${index})">🗑️</span>
+                    ${hasDate ? `<div class="check-btn ${item.concluido ? 'active' : ''}" onclick="toggle(${index})">${item.concluido ? '✓' : ''}</div>` : ''}
                 </div>`;
+
+            if (hasDate) {
+                let cl = 'item';
+                const diff = (item.timestamp - agora.getTime()) / 60000;
+                if (item.concluido) cl += ' done';
+                else if (diff > -20 && diff < 20) cl += ' now';
+                else if (item.timestamp < agora.getTime()) cl += ' done';
+                listaAg.innerHTML += `<div class="${cl}">${itemContent}</div>`;
+            } else {
+                listaBa.innerHTML += `<div class="item no-date">${itemContent}</div>`;
+            }
         });
         localStorage.setItem('agenda_vFinal', JSON.stringify(agenda));
     }
+
     function adicionar() {
         const nome = document.getElementById('inpNome').value;
         const data = document.getElementById('inpData').value;
         const hora = document.getElementById('inpHora').value;
-        if (!nome || !data || !hora) return alert("Preencha tudo!");
-        const pD = data.split('-');
-        const pH = hora.split(':');
-        const finalData = new Date(pD[0], pD[1]-1, pD[2], pH[0], pH[1]);
-        agenda.push({ name: nome, timestamp: finalData.getTime(), concluido: false });
+        const repetir = document.getElementById('inpRepetir').value;
+
+        if (!nome) return alert("Digite o nome da tarefa!");
+
+        let ts = null;
+        if (data && hora) {
+            const pD = data.split('-');
+            const pH = hora.split(':');
+            ts = new Date(pD[0], pD[1]-1, pD[2], pH[0], pH[1]).getTime();
+        }
+
+        agenda.push({ name: nome, timestamp: ts, concluido: false, repetir: repetir });
         document.getElementById('inpNome').value = '';
         renderizar();
     }
-    function toggle(i) { agenda[i].concluido = !agenda[i].concluido; renderizar(); }
-    function excluir(i) { if(confirm("Excluir?")) { agenda.splice(i, 1); renderizar(); } }
-    function editar(i) {
-        const item = agenda[i]; const dt = new Date(item.timestamp);
-        document.getElementById('inpNome').value = item.name;
-        document.getElementById('inpData').value = dt.toISOString().split('T')[0];
-        document.getElementById('inpHora').value = dt.toTimeString().slice(0,5);
-        agenda.splice(i, 1); renderizar();
+
+    function toggle(i) {
+        const item = agenda[i];
+        item.concluido = !item.concluido;
+
+        // Se marcou como feito e tem repetição, cria o próximo
+        if (item.concluido && item.repetir !== 'none') {
+            let novaData = new Date(item.timestamp);
+            if (item.repetir === 'diario') novaData.setDate(novaData.getDate() + 1);
+            if (item.repetir === 'semanal') novaData.setDate(novaData.getDate() + 7);
+            if (item.repetir === 'mensal') novaData.setMonth(novaData.getMonth() + 1);
+            
+            agenda.push({
+                name: item.name,
+                timestamp: novaData.getTime(),
+                concluido: false,
+                repetir: item.repetir
+            });
+        }
+        renderizar();
     }
-    const d = new Date();
-    document.getElementById('inpData').value = d.toISOString().split('T')[0];
-    document.getElementById('inpHora').value = d.toTimeString().slice(0,5);
+
+    function excluir(i) { if(confirm("Excluir?")) { agenda.splice(i, 1); renderizar(); } }
+
+    function editar(i) {
+        const item = agenda[i];
+        document.getElementById('inpNome').value = item.name;
+        document.getElementById('inpRepetir').value = item.repetir;
+        if (item.timestamp) {
+            const dt = new Date(item.timestamp);
+            document.getElementById('inpData').value = dt.toISOString().split('T')[0];
+            document.getElementById('inpHora').value = dt.toTimeString().slice(0,5);
+        }
+        agenda.splice(i, 1);
+        renderizar();
+    }
+
     renderizar();
-    setInterval(renderizar, 30000);
+    setInterval(renderizar, 60000);
 </script>
 </body>
 </html>
