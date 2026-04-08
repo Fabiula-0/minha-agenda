@@ -5,42 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Minha Agenda Pro</title>
+    <title>Minha Agenda Focada</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 240px; }
+        body { font-family: -apple-system, sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 280px; color: #333; }
         
         /* Abas */
-        .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #666; cursor: pointer; }
+        .tabs { display: flex; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 900; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; font-size: 0.9rem; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
 
-        .header { padding: 15px; margin-bottom: 5px; }
-        .header h2 { margin: 0; font-size: 1.1rem; text-transform: capitalize; }
-        
-        .list { padding: 0 15px; display: flex; flex-direction: column; gap: 8px; }
-        .item { background: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #2563eb; }
-        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 8px; }
-        .item.done { border-left-color: #94a3b8; opacity: 0.6; }
-        .item.no-date { border-left-color: #f59e0b; }
+        /* Separadores de Data */
+        .day-group { margin: 15px 10px; }
+        .day-header { 
+            background: #e2e8f0; padding: 6px 12px; border-radius: 20px; 
+            font-size: 0.85rem; font-weight: bold; color: #475569;
+            display: inline-block; margin-bottom: 10px; text-transform: capitalize;
+        }
+        .day-header.today { background: #2563eb; color: white; }
 
-        .info { flex: 1; }
-        .name { font-size: 1rem; color: #1a1a1a; display: block; margin-bottom: 3px; }
+        .list { display: flex; flex-direction: column; gap: 8px; }
+        .item { 
+            background: white; padding: 12px; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #cbd5e1;
+        }
+        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; }
+        .item.done { opacity: 0.5; border-left-color: #94a3b8; }
+        .item.no-date { border-left: 5px solid #f59e0b; margin: 0 10px 8px 10px; }
+
+        .info { flex: 1; overflow: hidden; }
+        .name { font-size: 1rem; display: block; margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
         .name.riscado { text-decoration: line-through; color: #888; }
-        .time-label { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 5px; border-radius: 4px; }
-        .repeat-badge { font-size: 0.7rem; color: #2563eb; font-weight: bold; margin-left: 5px; }
+        .time-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+        .repeat-badge { font-size: 0.7rem; color: #2563eb; margin-left: 5px; }
 
-        .actions { display: flex; gap: 8px; align-items: center; }
-        .btn-action { font-size: 1.1rem; padding: 5px; }
-        .check-btn { width: 34px; height: 34px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: #fff; }
+        .actions { display: flex; gap: 12px; align-items: center; margin-left: 10px; }
+        .btn-action { font-size: 1.2rem; padding: 4px; }
+        .check-btn { 
+            width: 36px; height: 36px; border: 2px solid #cbd5e1; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; background: #fff;
+        }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        /* Rodapé Ajustado */
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px; border-top: 1px solid #ddd; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 8px; }
-        .row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .row input { margin-bottom: 0; flex: 1; min-width: 0; } /* min-width evita que o campo de hora suma */
-        button { background: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
+        /* Rodapé Refeito para não cortar botões */
+        .footer { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: white; padding: 15px; border-top: 1px solid #e2e8f0; 
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.08); z-index: 1000;
+        }
+        .footer-row { display: flex; flex-direction: column; gap: 10px; }
+        .input-group { display: flex; gap: 8px; width: 100%; }
+        
+        input, select { 
+            background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; 
+            padding: 12px; font-size: 16px; width: 100%; outline: none;
+        }
+        input:focus { border-color: #2563eb; background: #fff; }
+
+        /* Botão Grande */
+        .btn-main { 
+            background: #2563eb; color: white; border: none; padding: 15px; 
+            border-radius: 10px; font-weight: bold; font-size: 1rem; width: 100%;
+            margin-top: 5px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
         
         .hidden { display: none; }
     </style>
@@ -48,35 +76,37 @@
 <body>
 
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('agenda')">📅 Agenda</div>
-        <div class="tab" onclick="switchTab('banco')">💡 Ideias</div>
+        <div class="tab active" id="tab-agenda" onclick="switchTab('agenda')">📅 AGENDA</div>
+        <div class="tab" id="tab-banco" onclick="switchTab('banco')">💡 IDEIAS</div>
     </div>
 
     <div id="view-agenda">
-        <div class="header">
-            <h2 id="txtDia"></h2>
-        </div>
-        <div id="listaAgenda" class="list"></div>
+        <div id="listaAgenda"></div>
     </div>
 
     <div id="view-banco" class="hidden">
-        <div class="header"><h2>Banco de Ideias (Sem data)</h2></div>
+        <div style="padding: 15px;"><span class="day-header">Banco de Ideias (Sem data)</span></div>
         <div id="listaBanco" class="list"></div>
     </div>
 
     <div class="footer">
-        <input type="text" id="inpNome" placeholder="O que você vai fazer?">
-        <div class="row">
-            <input type="date" id="inpData">
-            <input type="time" id="inpHora">
+        <div class="footer-row">
+            <input type="text" id="inpNome" placeholder="O que você vai fazer?">
+            
+            <div class="input-group">
+                <input type="date" id="inpData">
+                <input type="time" id="inpHora">
+            </div>
+
+            <select id="inpRepetir">
+                <option value="none">Não repetir</option>
+                <option value="diario">🔁 Todo dia</option>
+                <option value="semanal">🔁 Toda semana</option>
+                <option value="mensal">🔁 Todo mês</option>
+            </select>
+
+            <button class="btn-main" onclick="adicionar()">AGENDAR NA SEQUÊNCIA</button>
         </div>
-        <select id="inpRepetir">
-            <option value="none">Não repetir</option>
-            <option value="diario">Repetir Todo Dia</option>
-            <option value="semanal">Repetir Toda Semana</option>
-            <option value="mensal">Repetir Todo Mês</option>
-        </select>
-        <button onclick="adicionar()">AGENDAR / GUARDAR</button>
     </div>
 
 <script>
@@ -86,7 +116,8 @@
     function switchTab(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+        
         if(tab === 'agenda') {
             document.getElementById('view-agenda').classList.remove('hidden');
             document.getElementById('view-banco').classList.add('hidden');
@@ -101,50 +132,71 @@
         const listaAg = document.getElementById('listaAgenda');
         const listaBa = document.getElementById('listaBanco');
         const agora = new Date();
-        
-        document.getElementById('txtDia').innerText = agora.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+        const hojeStr = agora.toLocaleDateString('pt-BR');
 
-        // Lógica de Transferir atrasados não concluídos para hoje
+        // Transferir atrasados
         agenda.forEach(item => {
             if (item.timestamp && !item.concluido) {
                 let d = new Date(item.timestamp);
-                let hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
-                let itemD = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-                if (itemD < hoje) {
+                let hojeMeiaNoite = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
+                if (d.getTime() < hojeMeiaNoite) {
                     d.setFullYear(agora.getFullYear(), agora.getMonth(), agora.getDate());
                     item.timestamp = d.getTime();
                 }
             }
         });
 
+        // Ordenar: Data/Hora primeiro, depois Banco
         agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
 
         listaAg.innerHTML = '';
         listaBa.innerHTML = '';
 
+        let ultimoDiaLabel = "";
+        let currentDayContainer = null;
+
         agenda.forEach((item, index) => {
-            const hasDate = !!item.timestamp;
-            const itemContent = `
+            const dataItem = item.timestamp ? new Date(item.timestamp) : null;
+            
+            const cardHtml = `
                 <div class="info">
                     <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                    ${hasDate ? `<span class="time-label">${new Date(item.timestamp).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-label">Sem data definida</span>'}
+                    <span class="time-label">${dataItem ? dataItem.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '💡 Ideia'}</span>
                     ${item.repetir !== 'none' ? `<span class="repeat-badge">🔁 ${item.repetir}</span>` : ''}
                 </div>
                 <div class="actions">
                     <span class="btn-action" onclick="editar(${index})">✏️</span>
                     <span class="btn-action" onclick="excluir(${index})">🗑️</span>
-                    ${hasDate ? `<div class="check-btn ${item.concluido ? 'active' : ''}" onclick="toggle(${index})">${item.concluido ? '✓' : ''}</div>` : ''}
+                    ${dataItem ? `<div class="check-btn ${item.concluido ? 'active' : ''}" onclick="toggle(${index})">${item.concluido ? '✓' : ''}</div>` : ''}
                 </div>`;
 
-            if (hasDate) {
-                let cl = 'item';
-                const diff = (item.timestamp - agora.getTime()) / 60000;
-                if (item.concluido) cl += ' done';
-                else if (diff > -20 && diff < 20) cl += ' now';
-                else if (item.timestamp < agora.getTime()) cl += ' done';
-                listaAg.innerHTML += `<div class="${cl}">${itemContent}</div>`;
+            if (dataItem) {
+                // Lógica de Agrupamento por Dia
+                const diaLabel = dataItem.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+                
+                if (diaLabel !== ultimoDiaLabel) {
+                    const group = document.createElement('div');
+                    group.className = 'day-group';
+                    const isToday = dataItem.toLocaleDateString('pt-BR') === hojeStr;
+                    group.innerHTML = `<div class="day-header ${isToday ? 'today' : ''}">${isToday ? 'Hoje - ' : ''}${diaLabel}</div><div class="list"></div>`;
+                    listaAg.appendChild(group);
+                    currentDayContainer = group.querySelector('.list');
+                    ultimoDiaLabel = diaLabel;
+                }
+
+                const itemDiv = document.createElement('div');
+                const diff = (dataItem - agora) / 60000;
+                itemDiv.className = 'item';
+                if (item.concluido) itemDiv.classList.add('done');
+                else if (diff > -20 && diff < 20) itemDiv.classList.add('now');
+                
+                itemDiv.innerHTML = cardHtml;
+                currentDayContainer.appendChild(itemDiv);
             } else {
-                listaBa.innerHTML += `<div class="item no-date">${itemContent}</div>`;
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item no-date';
+                itemDiv.innerHTML = cardHtml;
+                listaBa.appendChild(itemDiv);
             }
         });
         localStorage.setItem('agenda_vFinal', JSON.stringify(agenda));
@@ -160,9 +212,9 @@
 
         let ts = null;
         if (data && hora) {
-            const pD = data.split('-');
-            const pH = hora.split(':');
-            ts = new Date(pD[0], pD[1]-1, pD[2], pH[0], pH[1]).getTime();
+            const [y, m, d] = data.split('-');
+            const [hr, min] = hora.split(':');
+            ts = new Date(y, m-1, d, hr, min).getTime();
         }
 
         agenda.push({ name: nome, timestamp: ts, concluido: false, repetir: repetir });
@@ -173,25 +225,17 @@
     function toggle(i) {
         const item = agenda[i];
         item.concluido = !item.concluido;
-
-        // Se marcou como feito e tem repetição, cria o próximo
         if (item.concluido && item.repetir !== 'none') {
-            let novaData = new Date(item.timestamp);
-            if (item.repetir === 'diario') novaData.setDate(novaData.getDate() + 1);
-            if (item.repetir === 'semanal') novaData.setDate(novaData.getDate() + 7);
-            if (item.repetir === 'mensal') novaData.setMonth(novaData.getMonth() + 1);
-            
-            agenda.push({
-                name: item.name,
-                timestamp: novaData.getTime(),
-                concluido: false,
-                repetir: item.repetir
-            });
+            let nD = new Date(item.timestamp);
+            if (item.repetir === 'diario') nD.setDate(nD.getDate() + 1);
+            if (item.repetir === 'semanal') nD.setDate(nD.getDate() + 7);
+            if (item.repetir === 'mensal') nD.setMonth(nD.getMonth() + 1);
+            agenda.push({ name: item.name, timestamp: nD.getTime(), concluido: false, repetir: item.repetir });
         }
         renderizar();
     }
 
-    function excluir(i) { if(confirm("Excluir?")) { agenda.splice(i, 1); renderizar(); } }
+    function excluir(i) { if(confirm("Deseja apagar?")) { agenda.splice(i, 1); renderizar(); } }
 
     function editar(i) {
         const item = agenda[i];
@@ -201,10 +245,18 @@
             const dt = new Date(item.timestamp);
             document.getElementById('inpData').value = dt.toISOString().split('T')[0];
             document.getElementById('inpHora').value = dt.toTimeString().slice(0,5);
+        } else {
+            document.getElementById('inpData').value = '';
+            document.getElementById('inpHora').value = '';
         }
         agenda.splice(i, 1);
         renderizar();
     }
+
+    // Preencher campos iniciais
+    const d = new Date();
+    document.getElementById('inpData').value = d.toISOString().split('T')[0];
+    document.getElementById('inpHora').value = d.toTimeString().slice(0,5);
 
     renderizar();
     setInterval(renderizar, 60000);
