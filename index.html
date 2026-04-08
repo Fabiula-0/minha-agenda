@@ -8,9 +8,8 @@
     <title>Minha Agenda</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-bottom: 240px; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-bottom: 260px; }
         
-        /* Abas */
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
         .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #666; cursor: pointer; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
@@ -35,18 +34,13 @@
         .check-btn { width: 32px; height: 32px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-weight: bold; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        /* Rodapé Original com Ajuste de Relógio */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; background: #fff; }
         
-        .row { display: flex; gap: 8px; }
-        .row input { width: 50%; }
-        
-        /* AJUSTE ESPECÍFICO PARA O RELÓGIO NÃO CORTAR O BOTÃO DEFINIR */
-        input[type="time"] {
-            padding-right: 30px; /* Dá espaço interno para o seletor respirar */
-            min-width: 140px;     /* Garante largura mínima para os botões do sistema aparecerem */
-        }
+        .row { display: flex; gap: 8px; align-items: center; }
+        .row input[type="date"] { flex: 2; }
+        .time-selects { flex: 3; display: flex; gap: 4px; align-items: center; }
+        .time-selects select { padding: 12px 5px; text-align: center; }
 
         button { background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
         .hidden { display: none; }
@@ -74,10 +68,16 @@
 
     <div class="footer">
         <input type="text" id="inpNome" placeholder="Nome do compromisso">
+        
         <div class="row">
             <input type="date" id="inpData">
-            <input type="time" id="inpHora">
+            <div class="time-selects">
+                <select id="selHora"></select>
+                <span>:</span>
+                <select id="selMin"></select>
+            </div>
         </div>
+
         <select id="inpRepetir">
             <option value="none">Não repetir</option>
             <option value="diario">Repetir Todo Dia</option>
@@ -89,19 +89,18 @@
 
 <script>
     let agenda = JSON.parse(localStorage.getItem('agenda_vFinal')) || [];
-    let currentTab = 'agenda';
+    
+    // Preencher Dropdowns de Hora e Minuto
+    const sh = document.getElementById('selHora');
+    const sm = document.getElementById('selMin');
+    for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}</option>`;
+    for(let i=0; i<60; i+=5) sm.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}</option>`;
 
     function switchTab(tab) {
-        currentTab = tab;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         event.target.classList.add('active');
-        if(tab === 'agenda') {
-            document.getElementById('view-agenda').classList.remove('hidden');
-            document.getElementById('view-banco').classList.add('hidden');
-        } else {
-            document.getElementById('view-agenda').classList.add('hidden');
-            document.getElementById('view-banco').classList.remove('hidden');
-        }
+        document.getElementById('view-agenda').classList.toggle('hidden', tab !== 'agenda');
+        document.getElementById('view-banco').classList.toggle('hidden', tab !== 'banco');
         renderizar();
     }
 
@@ -125,9 +124,7 @@
         });
 
         agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
-
-        listaAg.innerHTML = '';
-        listaBa.innerHTML = '';
+        listaAg.innerHTML = ''; listaBa.innerHTML = '';
 
         agenda.forEach((item, index) => {
             const dataItem = item.timestamp ? new Date(item.timestamp) : null;
@@ -147,11 +144,8 @@
                     ${dataItem ? `<div class="check-btn ${item.concluido ? 'active' : ''}" onclick="toggle(${index})">${item.concluido ? '✓' : ''}</div>` : ''}
                 </div>`;
 
-            if (dataItem) {
-                listaAg.innerHTML += `<div class="${classe}">${card}</div>`;
-            } else {
-                listaBa.innerHTML += `<div class="item no-date">${card}</div>`;
-            }
+            if (dataItem) listaAg.innerHTML += `<div class="${classe}">${card}</div>`;
+            else listaBa.innerHTML += `<div class="item no-date">${card}</div>`;
         });
         localStorage.setItem('agenda_vFinal', JSON.stringify(agenda));
     }
@@ -159,14 +153,14 @@
     function adicionar() {
         const nome = document.getElementById('inpNome').value;
         const data = document.getElementById('inpData').value;
-        const hora = document.getElementById('inpHora').value;
+        const h = document.getElementById('selHora').value;
+        const m = document.getElementById('selMin').value;
         const repetir = document.getElementById('inpRepetir').value;
         if (!nome) return;
         let ts = null;
-        if (data && hora) {
-            const [y, m, d] = data.split('-');
-            const [hr, min] = hora.split(':');
-            ts = new Date(y, m-1, d, hr, min).getTime();
+        if (data) {
+            const [y, mes, d] = data.split('-');
+            ts = new Date(y, mes-1, d, h, m).getTime();
         }
         agenda.push({ name: nome, timestamp: ts, concluido: false, repetir: repetir });
         document.getElementById('inpNome').value = '';
@@ -195,12 +189,15 @@
         if (item.timestamp) {
             const dt = new Date(item.timestamp);
             document.getElementById('inpData').value = dt.toISOString().split('T')[0];
-            document.getElementById('inpHora').value = dt.toTimeString().slice(0,5);
+            document.getElementById('selHora').value = dt.getHours().toString().padStart(2, '0');
+            document.getElementById('selMin').value = (Math.round(dt.getMinutes()/5)*5).toString().padStart(2, '0');
         }
         agenda.splice(i, 1);
         renderizar();
     }
 
+    const d = new Date();
+    document.getElementById('inpData').value = d.toISOString().split('T')[0];
     renderizar();
     setInterval(renderizar, 60000);
 </script>
