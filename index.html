@@ -5,105 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Minha Agenda Focada</title>
+    <title>Minha Agenda</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 320px; color: #333; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-bottom: 240px; }
         
         /* Abas */
-        .tabs { display: flex; background: #fff; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 900; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; font-size: 0.9rem; }
+        .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
+        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #666; cursor: pointer; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
 
-        /* Separadores de Data */
-        .day-group { margin: 15px 10px; }
-        .day-header { 
-            background: #e2e8f0; padding: 6px 12px; border-radius: 20px; 
-            font-size: 0.85rem; font-weight: bold; color: #475569;
-            display: inline-block; margin-bottom: 10px; text-transform: capitalize;
-        }
-        .day-header.today { background: #2563eb; color: white; }
+        .header { margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .header h2 { margin: 0; font-size: 1.2rem; text-transform: capitalize; color: #1a1a1a; }
+        .header p { margin: 0; font-size: 0.9rem; color: #666; text-transform: capitalize; }
 
         .list { display: flex; flex-direction: column; gap: 8px; }
-        .item { 
-            background: white; padding: 12px; border-radius: 10px; 
-            display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #cbd5e1;
-        }
-        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; }
-        .item.done { opacity: 0.5; border-left-color: #94a3b8; }
-        .item.no-date { border-left: 5px solid #f59e0b; margin: 0 10px 8px 10px; }
+        .item { background: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #2563eb; }
+        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 8px; }
+        .item.done { border-left-color: #94a3b8; opacity: 0.6; }
+        .item.no-date { border-left-color: #f59e0b; }
 
-        .info { flex: 1; overflow: hidden; }
-        .name { font-size: 1rem; display: block; margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .info { flex: 1; }
+        .name { font-size: 1rem; color: #1a1a1a; display: block; }
         .name.riscado { text-decoration: line-through; color: #888; }
-        .time-label { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+        .time-label { font-size: 0.8rem; color: #666; }
 
-        .actions { display: flex; gap: 12px; align-items: center; margin-left: 10px; }
-        .btn-action { font-size: 1.2rem; padding: 4px; }
-        .check-btn { 
-            width: 36px; height: 36px; border: 2px solid #cbd5e1; border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; background: #fff;
-        }
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .btn-action { font-size: 1.1rem; cursor: pointer; padding: 5px; }
+        .check-btn { width: 32px; height: 32px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-weight: bold; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        /* Rodapé Refeito para dar espaço total aos seletores */
-        .footer { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            background: white; padding: 15px 20px 25px 20px; 
-            border-top: 1px solid #e2e8f0; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000;
-        }
-        .footer-content { display: flex; flex-direction: column; gap: 10px; max-width: 500px; margin: 0 auto; }
+        /* Rodapé Original com Ajuste de Relógio */
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1000; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; }
         
-        input, select { 
-            background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; 
-            padding: 14px; font-size: 16px; width: 100%; outline: none;
-            display: block; -webkit-appearance: none;
+        .row { display: flex; gap: 8px; }
+        .row input { width: 50%; }
+        
+        /* AJUSTE ESPECÍFICO PARA O RELÓGIO NÃO CORTAR O BOTÃO DEFINIR */
+        input[type="time"] {
+            padding-right: 30px; /* Dá espaço interno para o seletor respirar */
+            min-width: 140px;     /* Garante largura mínima para os botões do sistema aparecerem */
         }
-        input:focus { border-color: #2563eb; background: #fff; }
 
-        .btn-main { 
-            background: #2563eb; color: white; border: none; padding: 16px; 
-            border-radius: 12px; font-weight: bold; font-size: 1rem; width: 100%;
-            margin-top: 5px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-        }
-        
+        button { background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 16px; width: 100%; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div class="tabs">
-        <div class="tab active" id="tab-agenda" onclick="switchTab('agenda')">📅 AGENDA</div>
-        <div class="tab" id="tab-banco" onclick="switchTab('banco')">💡 IDEIAS</div>
+        <div class="tab active" onclick="switchTab('agenda')">📅 Agenda</div>
+        <div class="tab" onclick="switchTab('banco')">💡 Ideias</div>
     </div>
 
     <div id="view-agenda">
-        <div id="listaAgenda"></div>
+        <div class="header">
+            <h2 id="txtDia"></h2>
+            <p id="txtMes"></p>
+        </div>
+        <div id="minhaLista" class="list"></div>
     </div>
 
     <div id="view-banco" class="hidden">
-        <div style="padding: 15px;"><span class="day-header">Banco de Ideias (Sem data)</span></div>
+        <div class="header"><h2>Banco de Ideias</h2></div>
         <div id="listaBanco" class="list"></div>
     </div>
 
     <div class="footer">
-        <div class="footer-content">
-            <input type="text" id="inpNome" placeholder="O que você vai fazer?">
-            
+        <input type="text" id="inpNome" placeholder="Nome do compromisso">
+        <div class="row">
             <input type="date" id="inpData">
             <input type="time" id="inpHora">
-
-            <select id="inpRepetir">
-                <option value="none">Não repetir</option>
-                <option value="diario">🔁 Todo dia</option>
-                <option value="semanal">🔁 Toda semana</option>
-                <option value="mensal">🔁 Todo mês</option>
-            </select>
-
-            <button class="btn-main" onclick="adicionar()">AGENDAR NA SEQUÊNCIA</button>
         </div>
+        <select id="inpRepetir">
+            <option value="none">Não repetir</option>
+            <option value="diario">Repetir Todo Dia</option>
+            <option value="semanal">Repetir Toda Semana</option>
+            <option value="mensal">Repetir Todo Mês</option>
+        </select>
+        <button onclick="adicionar()">AGENDAR NA SEQUÊNCIA</button>
     </div>
 
 <script>
@@ -113,7 +94,7 @@
     function switchTab(tab) {
         currentTab = tab;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
+        event.target.classList.add('active');
         if(tab === 'agenda') {
             document.getElementById('view-agenda').classList.remove('hidden');
             document.getElementById('view-banco').classList.add('hidden');
@@ -125,17 +106,18 @@
     }
 
     function renderizar() {
-        const listaAg = document.getElementById('listaAgenda');
+        const listaAg = document.getElementById('minhaLista');
         const listaBa = document.getElementById('listaBanco');
         const agora = new Date();
-        const hojeStr = agora.toLocaleDateString('pt-BR');
+        
+        document.getElementById('txtDia').innerText = agora.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'});
+        document.getElementById('txtMes').innerText = agora.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 
-        // Transferir atrasados (Qualidade - mantém junto até ter outro evento)
         agenda.forEach(item => {
             if (item.timestamp && !item.concluido) {
                 let d = new Date(item.timestamp);
-                let hojeMeiaNoite = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
-                if (d.getTime() < hojeMeiaNoite) {
+                let hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
+                if (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() < hoje) {
                     d.setFullYear(agora.getFullYear(), agora.getMonth(), agora.getDate());
                     item.timestamp = d.getTime();
                 }
@@ -146,16 +128,18 @@
 
         listaAg.innerHTML = '';
         listaBa.innerHTML = '';
-        let ultimoDiaLabel = "";
-        let currentDayContainer = null;
 
         agenda.forEach((item, index) => {
             const dataItem = item.timestamp ? new Date(item.timestamp) : null;
-            const cardHtml = `
+            const diff = dataItem ? (dataItem - agora) / 60000 : null;
+            let classe = 'item';
+            if (item.concluido) classe += ' done';
+            else if (diff !== null && diff > -20 && diff < 20) classe += ' now';
+
+            const card = `
                 <div class="info">
                     <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                    <span class="time-label">${dataItem ? dataItem.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '💡 Ideia'}</span>
-                    ${item.repetir !== 'none' ? `<span style="font-size:0.7rem; color:#2563eb; margin-left:5px;">🔁</span>` : ''}
+                    <span class="time-label">${dataItem ? dataItem.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : 'Sem data'}</span>
                 </div>
                 <div class="actions">
                     <span class="btn-action" onclick="editar(${index})">✏️</span>
@@ -164,28 +148,9 @@
                 </div>`;
 
             if (dataItem) {
-                const diaLabel = dataItem.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
-                if (diaLabel !== ultimoDiaLabel) {
-                    const group = document.createElement('div');
-                    group.className = 'day-group';
-                    const isToday = dataItem.toLocaleDateString('pt-BR') === hojeStr;
-                    group.innerHTML = `<div class="day-header ${isToday ? 'today' : ''}">${isToday ? 'Hoje • ' : ''}${diaLabel}</div><div class="list"></div>`;
-                    listaAg.appendChild(group);
-                    currentDayContainer = group.querySelector('.list');
-                    ultimoDiaLabel = diaLabel;
-                }
-                const itemDiv = document.createElement('div');
-                const diff = (dataItem - agora) / 60000;
-                itemDiv.className = 'item';
-                if (item.concluido) itemDiv.classList.add('done');
-                else if (diff > -20 && diff < 20) itemDiv.classList.add('now');
-                itemDiv.innerHTML = cardHtml;
-                currentDayContainer.appendChild(itemDiv);
+                listaAg.innerHTML += `<div class="${classe}">${card}</div>`;
             } else {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'item no-date';
-                itemDiv.innerHTML = cardHtml;
-                listaBa.appendChild(itemDiv);
+                listaBa.innerHTML += `<div class="item no-date">${card}</div>`;
             }
         });
         localStorage.setItem('agenda_vFinal', JSON.stringify(agenda));
@@ -235,10 +200,6 @@
         agenda.splice(i, 1);
         renderizar();
     }
-
-    const d = new Date();
-    document.getElementById('inpData').value = d.toISOString().split('T')[0];
-    document.getElementById('inpHora').value = d.toTimeString().slice(0,5);
 
     renderizar();
     setInterval(renderizar, 60000);
