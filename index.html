@@ -6,7 +6,7 @@
     <title>Minha Agenda</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 300px; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 320px; scroll-behavior: smooth; }
         
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
         .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #666; cursor: pointer; }
@@ -23,14 +23,9 @@
         .list { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
         
         .item { 
-            background: white; 
-            padding: 16px; 
-            border-radius: 10px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
-            border-left: 6px solid #2563eb; 
+            background: white; padding: 16px; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 6px solid #2563eb; 
         }
         
         .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 10px; }
@@ -48,17 +43,19 @@
         .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        /* Rodapé com campos divididos e grandes */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000; }
         input, select { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
         
         .row { display: flex; gap: 8px; width: 100%; }
-        .col-data { flex: 2; } /* Espaço maior para a data */
-        .col-hora { flex: 1; } /* Espaço para hora */
-        .col-min { flex: 1; }  /* Espaço para minutos */
+        .col-data { flex: 2; }
+        .col-hora, .col-min { flex: 1; }
 
         .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; margin-top: 5px; }
         .btn-edit { background: #f59e0b; }
+        
+        .backup-row { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-backup { flex: 1; padding: 8px; font-size: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; color: #475569; font-weight: bold; }
+        
         .hidden { display: none; }
     </style>
 </head>
@@ -80,15 +77,9 @@
     <div class="footer">
         <input type="text" id="inpNome" placeholder="O que vai fazer?">
         <div class="row">
-            <div class="col-data">
-                <input type="date" id="inpData">
-            </div>
-            <div class="col-hora">
-                <select id="selHora"></select>
-            </div>
-            <div class="col-min">
-                <select id="selMin"></select>
-            </div>
+            <div class="col-data"><input type="date" id="inpData"></div>
+            <div class="col-hora"><select id="selHora"></select></div>
+            <div class="col-min"><select id="selMin"></select></div>
         </div>
         <select id="inpRepetir">
             <option value="none">Não repetir</option>
@@ -98,6 +89,11 @@
         </select>
         <button id="btnSalvar" class="btn-main" onclick="adicionar()">AGENDAR</button>
         <button id="btnCancelarEdicao" class="hidden" onclick="cancelarEdicao()" style="background:#888; color:white; border:none; padding:8px; border-radius:8px; font-weight:bold;">CANCELAR EDIÇÃO</button>
+        
+        <div class="backup-row">
+            <button class="btn-backup" onclick="exportarDados()">💾 Exportar Backup</button>
+            <button class="btn-backup" onclick="importarDados()">📂 Importar Backup</button>
+        </div>
     </div>
 
 <script>
@@ -116,7 +112,7 @@
         document.getElementById('view-banco').classList.toggle('hidden', tab !== 'banco');
     }
 
-    function renderizar() {
+    function renderizar(focarProxima = false) {
         const listaAg = document.getElementById('minhaLista');
         const listaBa = document.getElementById('listaBanco');
         const agora = new Date();
@@ -135,23 +131,30 @@
 
         agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
         listaAg.innerHTML = ''; listaBa.innerHTML = '';
-
         let ultimoDia = "";
         let containerAgenda = null;
+        let idFoco = null;
 
         agenda.forEach((item, index) => {
             const dt = item.timestamp ? new Date(item.timestamp) : null;
             const diff = dt ? (dt - agora) / 60000 : null;
-            
             let classe = 'item';
+            let status = 'future';
+
             if (item.concluido) classe += ' done';
             else if (dt) {
-                if (diff > -20 && diff < 20) classe += ' now';
-                else if (dt < agora) classe += ' past';
+                if (diff > -20 && diff < 20) { classe += ' now'; status = 'now'; }
+                else if (dt < agora) { classe += ' past'; status = 'past'; }
+                else status = 'pending';
+            }
+
+            // Identifica a primeira tarefa pendente ou atual para focar
+            if (!idFoco && !item.concluido && dt && status !== 'past') {
+                idFoco = `item-${index}`;
             }
 
             const html = `
-                <div class="info">
+                <div class="info" id="item-${index}">
                     <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
                     <span class="time-label">${dt ? dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : 'Ideia'}</span>
                 </div>
@@ -169,7 +172,6 @@
                     divisor.className = `dia-divisor ${isHoje?'hoje':''}`;
                     divisor.innerText = `${isHoje?'Hoje - ':''}${diaAtual}`;
                     listaAg.appendChild(divisor);
-                    
                     containerAgenda = document.createElement('div');
                     containerAgenda.className = 'list';
                     listaAg.appendChild(containerAgenda);
@@ -181,6 +183,14 @@
             }
         });
         localStorage.setItem('agenda_vFinal', JSON.stringify(agenda));
+
+        // Rola até a próxima tarefa apenas se for a primeira abertura ou solicitado
+        if (focarProxima && idFoco) {
+            setTimeout(() => {
+                const el = document.getElementById(idFoco);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
     }
 
     function adicionar() {
@@ -203,7 +213,9 @@
             agenda.push(novoItem);
         }
         document.getElementById('inpNome').value = '';
-        renderizar();
+        
+        // Renderiza sem focar, mantendo a tela onde está
+        renderizar(false); 
     }
 
     function prepararEdicao(i) {
@@ -220,7 +232,6 @@
         document.getElementById('btnSalvar').innerText = "SALVAR ALTERAÇÃO";
         document.getElementById('btnSalvar').classList.add('btn-edit');
         document.getElementById('btnCancelarEdicao').classList.remove('hidden');
-        window.scrollTo(0, document.body.scrollHeight);
     }
 
     function cancelarEdicao() {
@@ -241,15 +252,30 @@
             if (item.repetir === 'mensal') nD.setMonth(nD.getMonth() + 1);
             agenda.push({ name: item.name, timestamp: nD.getTime(), concluido: false, repetir: item.repetir });
         }
-        renderizar();
+        renderizar(false);
     }
 
-    function excluir(i) { if(confirm("Apagar permanentemente?")) { agenda.splice(i, 1); renderizar(); } }
+    function excluir(i) { if(confirm("Apagar?")) { agenda.splice(i, 1); renderizar(false); } }
+
+    function exportarDados() {
+        const dados = localStorage.getItem('agenda_vFinal');
+        navigator.clipboard.writeText(dados).then(() => alert("Backup copiado!"));
+    }
+
+    function importarDados() {
+        const codigo = prompt("Cole o backup:");
+        if (codigo) {
+            try { agenda = JSON.parse(codigo); renderizar(true); } catch(e) { alert("Erro!"); }
+        }
+    }
 
     const d = new Date();
     document.getElementById('inpData').value = d.toISOString().split('T')[0];
-    renderizar();
-    setInterval(renderizar, 60000);
+    
+    // Primeira abertura: renderiza e foca na próxima tarefa
+    renderizar(true);
+    
+    setInterval(() => renderizar(false), 60000);
 </script>
 </body>
 </html>
