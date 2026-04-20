@@ -6,9 +6,9 @@
     <title>Agenda Fabiula - Inteligente</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 300px; scroll-behavior: smooth; color: #333; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 320px; scroll-behavior: smooth; color: #333; }
         
-        /* Status que desaparece */
+        /* Status temporário que não atrapalha */
         .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; transition: opacity 0.5s; opacity: 0; pointer-events: none; }
         .status-nuvem.show { opacity: 1; }
         
@@ -115,7 +115,7 @@
                     const data = snapshot.val();
                     window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
                     showStatus();
-                    renderizar();
+                    renderizar(); // Força a atualização de todas as abas
                 });
             }
         });
@@ -165,6 +165,8 @@
 
         function renderSemanal() {
             const lista = document.getElementById('listaSemanal');
+            if(!lista) return;
+
             const start = new Date(dataRefSemana);
             start.setDate(start.getDate() - start.getDay());
             const end = new Date(start);
@@ -177,14 +179,27 @@
                 let dia = new Date(start);
                 dia.setDate(dia.getDate() + i);
                 let diaStr = dia.toLocaleDateString('pt-BR');
-                lista.innerHTML += `<div class="dia-divisor">${dia.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'})}</div>`;
+                
+                const divDia = document.createElement('div');
+                divDia.className = 'dia-divisor';
+                divDia.innerText = dia.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'});
+                lista.appendChild(divDia);
+                
+                const container = document.createElement('div');
+                container.className = 'list';
                 
                 const diaTasks = window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr);
-                let sublist = '<div class="list">';
-                diaTasks.forEach(it => {
-                    sublist += `<div class="item ${it.concluido?'done':''}" style="padding:10px;">${new Date(it.timestamp).getHours()}h: ${it.name}</div>`;
-                });
-                lista.innerHTML += sublist + '</div>';
+                
+                if(diaTasks.length === 0) {
+                    container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">Nada agendado</div>';
+                } else {
+                    diaTasks.forEach(it => {
+                        const h = new Date(it.timestamp).getHours().toString().padStart(2, '0');
+                        const m = new Date(it.timestamp).getMinutes().toString().padStart(2, '0');
+                        container.innerHTML += `<div class="item ${it.concluido?'done':''}" style="padding:10px; font-size:0.9rem;">${h}:${m} - ${it.name}</div>`;
+                    });
+                }
+                lista.appendChild(container);
             }
         }
 
