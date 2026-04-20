@@ -3,77 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Nuvem & Recuperação</title>
+    <title>Agenda Fabiula - Protegida</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 380px; scroll-behavior: smooth; color: #333; }
-        
-        .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; overflow-x: auto; }
-        .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; font-size: 0.85rem; border: none; background: none; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 350px; color: #333; }
+        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 10px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; }
+        .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
+        .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: none; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
-
-        .dia-divisor { background: #e2e8f0; padding: 10px 15px; margin: 20px 10px 10px 10px; font-weight: bold; font-size: 0.9rem; color: #475569; text-transform: capitalize; border-radius: 6px; }
-        .dia-divisor.hoje { background: #2563eb; color: white; }
-        .list { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
-        
-        .item { background: white; padding: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 6px solid #2563eb; }
-        .item.done { border-left-color: #94a3b8; opacity: 0.5; }
-
-        .info { flex: 1; }
-        .name { font-size: 1.05rem; display: block; margin-bottom: 4px; }
-        .name.riscado { text-decoration: line-through; color: #888; }
-        .time-label { font-size: 0.85rem; color: #666; font-weight: 500; }
-
-        .actions { display: flex; gap: 15px; align-items: center; }
-        .btn-action { font-size: 1.2rem; cursor: pointer; padding: 5px; border: none; background: none; }
-        .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; cursor: pointer; }
-        .check-btn.active { background: #059669; color: white; border-color: #059669; }
-
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
-        .row { display: flex; gap: 8px; width: 100%; }
-        .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; cursor: pointer; }
-        
-        .btn-backup { flex: 1; padding: 10px; font-size: 11px; background: #f8fafc; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .status-nuvem { position: fixed; top: 60px; right: 10px; font-size: 10px; padding: 3px 8px; border-radius: 10px; background: #eee; z-index: 1001; }
+        .list { display: flex; flex-direction: column; gap: 12px; padding: 15px; }
+        .item { background: white; padding: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 6px solid #2563eb; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .item.done { opacity: 0.5; border-left-color: #94a3b8; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 8px; font-size: 16px; }
+        .btn-main { background: #2563eb; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="status" class="status-nuvem">Conectando...</div>
+    <div id="status" class="status-nuvem">⏳ Conectando...</div>
 
     <div class="tabs">
         <button class="tab active" onclick="switchTab('agenda', this)">📅 Agenda</button>
-        <button class="tab" onclick="switchTab('semanal', this)">🗓️ Semanal</button>
         <button class="tab" onclick="switchTab('projetos', this)">🏗️ Projetos</button>
-        <button class="tab" onclick="switchTab('banco', this)">💡 Ideias</button>
     </div>
 
-    <div id="view-agenda"><div id="minhaLista"></div></div>
-    <div id="view-semanal" class="hidden"><div id="listaSemanal"></div></div>
-    <div id="view-projetos" class="hidden"><div id="listaProjetos"></div></div>
-    <div id="view-banco" class="hidden"><div class="list" id="listaBanco"></div></div>
+    <div id="view-agenda">
+        <div id="listaPrincipal" class="list"></div>
+    </div>
+
+    <div id="view-projetos" class="hidden">
+        <div style="padding: 20px; text-align: center; color: #666;">Aba de Projetos em sincronia...</div>
+    </div>
 
     <div class="footer">
         <input type="text" id="inpNome" placeholder="O que vai fazer?">
-        <div class="row">
-            <input type="date" id="inpData" style="flex:2">
-            <select id="selHora" style="flex:1"></select>
-            <select id="selMin" style="flex:1"></select>
+        <div style="display: flex; gap: 8px;">
+            <input type="date" id="inpData" style="flex: 2;">
+            <select id="selHora" style="flex: 1;"></select>
+            <select id="selMin" style="flex: 1;"></select>
         </div>
-        <button class="btn-main" onclick="adicionar()">AGENDAR NA NUVEM</button>
-        
-        <div style="display:flex; gap:10px; margin-top:5px;">
-            <button class="btn-backup" onclick="recuperarLocal()">🔄 Importar Backup Local p/ Nuvem</button>
-            <button class="btn-backup" onclick="importarManual()">📂 Colar Código Backup</button>
-        </div>
+        <button class="btn-main" onclick="adicionarTarefa()">AGENDAR AGORA</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Sua configuração (mantida)
         const firebaseConfig = {
             apiKey: "AIzaSyDXrakHMCcdXzxSjzMbNB2LIy8i3R3rMLg",
             authDomain: "agendafabiula.firebaseapp.com",
@@ -86,130 +64,71 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const agendaRef = ref(db, 'agenda');
+        const agendaRef = ref(db, 'fabiula_agenda');
 
-        window.agenda = [];
-        let currentTab = 'agenda';
-
-        // Sincronização em Tempo Real
+        // Sincronização em tempo real
         onValue(agendaRef, (snapshot) => {
-            const data = snapshot.val();
-            window.agenda = data ? Object.values(data) : [];
-            document.getElementById('status').innerText = "Nuvem OK ✅";
-            renderizar();
+            const dados = snapshot.val();
+            const lista = dados ? Object.entries(dados) : [];
+            renderizar(lista);
+            document.getElementById('status').innerText = "Sincronizado ✅";
         });
 
-        // Adicionar na Nuvem
-        window.adicionar = function(itemManual = null) {
-            const nome = itemManual ? itemManual.name : document.getElementById('inpNome').value;
-            if(!nome) return;
+        window.adicionarTarefa = function() {
+            const nome = document.getElementById('inpNome').value;
+            const data = document.getElementById('inpData').value;
+            const h = document.getElementById('selHora').value;
+            const m = document.getElementById('selMin').value;
 
-            let novoItem;
-            if (itemManual) {
-                novoItem = { ...itemManual, id: itemManual.id || Date.now() + Math.random() };
-            } else {
-                const data = document.getElementById('inpData').value;
-                const h = document.getElementById('selHora').value;
-                const m = document.getElementById('selMin').value;
-                let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : null;
-                novoItem = { name: nome, timestamp: ts, concluido: false, id: Date.now() };
-            }
-            
-            push(agendaRef, novoItem);
-            if(!itemManual) document.getElementById('inpNome').value = '';
+            if(!nome) return alert("Digite o nome!");
+
+            const novaTarefa = {
+                name: nome,
+                data: data,
+                hora: `${h}:${m}`,
+                timestamp: data ? new Date(`${data}T${h}:${m}:00`).getTime() : Date.now(),
+                concluido: false
+            };
+
+            push(agendaRef, novaTarefa);
+            document.getElementById('inpNome').value = "";
         };
 
-        // RECUPERAÇÃO DE DADOS ANTIGOS
-        window.recuperarLocal = function() {
-            const antigo = localStorage.getItem('agenda_vFinal');
-            if (antigo) {
-                const listaAntiga = JSON.parse(antigo);
-                if (confirm(`Encontrei ${listaAntiga.length} tarefas no seu celular. Deseja subir para a nuvem?`)) {
-                    listaAntiga.forEach(it => window.adicionar(it));
-                    alert("Sucesso! Seus dados antigos agora estão na nuvem.");
-                }
-            } else {
-                alert("Não encontrei dados antigos na memória deste aparelho.");
+        window.excluirTarefa = function(id) {
+            if(confirm("Apagar tarefa?")) {
+                remove(ref(db, `fabiula_agenda/${id}`));
             }
         };
 
-        window.importarManual = function() {
-            const cod = prompt("Cole o código de backup aqui:");
-            if (cod) {
-                try {
-                    const parsed = JSON.parse(cod);
-                    const lista = parsed.agenda || parsed;
-                    lista.forEach(it => window.adicionar(it));
-                    alert("Importação concluída!");
-                } catch(e) { alert("Código inválido!"); }
-            }
+        window.toggleTarefa = function(id, statusAtual) {
+            set(ref(db, `fabiula_agenda/${id}/concluido`), !statusAtual);
         };
 
-        window.toggle = function(id) {
-            onValue(agendaRef, (snapshot) => {
-                const data = snapshot.val();
-                for (let key in data) {
-                    if (data[key].id == id) {
-                        set(ref(db, 'agenda/' + key), { ...data[key], concluido: !data[key].concluido });
-                        break;
-                    }
-                }
-            }, { onlyOnce: true });
-        };
+        function renderizar(lista) {
+            const container = document.getElementById('listaPrincipal');
+            container.innerHTML = "";
 
-        window.excluir = function(id) {
-            if(!confirm("Apagar?")) return;
-            onValue(agendaRef, (snapshot) => {
-                const data = snapshot.val();
-                for (let key in data) {
-                    if (data[key].id == id) {
-                        set(ref(db, 'agenda/' + key), null);
-                        break;
-                    }
-                }
-            }, { onlyOnce: true });
-        };
+            // Ordenar por data
+            lista.sort((a, b) => a[1].timestamp - b[1].timestamp);
 
-        window.renderizar = function() {
-            const lista = document.getElementById('minhaLista');
-            const agora = new Date();
-            window.agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
-            lista.innerHTML = '';
-            let ultimoDia = "";
-            let container = null;
-
-            window.agenda.forEach((item) => {
-                if(!item.timestamp) return;
-                const dt = new Date(item.timestamp);
-                const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
-                
-                if(diaLabel !== ultimoDia) {
-                    const div = document.createElement('div');
-                    div.className = 'dia-divisor';
-                    div.innerText = diaLabel;
-                    lista.appendChild(div);
-                    container = document.createElement('div');
-                    container.className = 'list';
-                    lista.appendChild(container);
-                    ultimoDia = diaLabel;
-                }
-
-                let cl = 'item ' + (item.concluido ? 'done' : '');
-                container.innerHTML += `
-                    <div class="${cl}">
-                        <div class="info">
-                            <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                            <span class="time-label">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
-                        </div>
-                        <div class="actions">
-                            <span class="btn-action" onclick="excluir(${item.id})">🗑️</span>
-                            <div class="check-btn ${item.concluido ? 'active' : ''}" onclick="toggle(${item.id})">✓</div>
-                        </div>
-                    </div>`;
+            lista.forEach(([id, tarefa]) => {
+                const item = document.createElement('div');
+                item.className = `item ${tarefa.concluido ? 'done' : ''}`;
+                item.innerHTML = `
+                    <div class="info">
+                        <strong style="${tarefa.concluido ? 'text-decoration: line-through' : ''}">${tarefa.name}</strong><br>
+                        <small>${tarefa.data || ''} às ${tarefa.hora}</small>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="excluirTarefa('${id}')" style="border:none; background:none; font-size: 20px;">🗑️</button>
+                        <button onclick="toggleTarefa('${id}', ${tarefa.concluido})" style="border:none; background:none; font-size: 20px;">${tarefa.concluido ? '✅' : '⬜'}</button>
+                    </div>
+                `;
+                container.appendChild(item);
             });
-        };
+        }
 
-        // Setup inicial
+        // Setup inicial dos campos
         const sh = document.getElementById('selHora');
         const sm = document.getElementById('selMin');
         for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
@@ -217,11 +136,10 @@
         document.getElementById('inpData').value = new Date().toISOString().split('T')[0];
 
         window.switchTab = function(tab, el) {
-            currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
-            ['view-agenda', 'view-semanal', 'view-projetos', 'view-banco'].forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('view-agenda').classList.toggle('hidden', tab !== 'agenda');
+            document.getElementById('view-projetos').classList.toggle('hidden', tab !== 'projetos');
         }
     </script>
 </body>
