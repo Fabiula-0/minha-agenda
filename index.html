@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Minha Agenda & Projetos</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 350px; scroll-behavior: smooth; }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 350px; scroll-behavior: smooth; color: #333; }
         
-        /* Menu Superior */
+        /* Menu Superior - Scannable */
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; overflow-x: auto; }
-        .tab { flex: 1; min-width: 100px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; font-size: 0.85rem; }
+        .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; font-size: 0.85rem; border: none; background: none; transition: 0.3s; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
 
         /* Divisores e Listas */
@@ -22,35 +22,27 @@
         .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 10px; }
         .item.past { border-left-color: #94a3b8; opacity: 0.7; background: #f9f9f9; }
         .item.done { border-left-color: #94a3b8; opacity: 0.5; }
-        .item.project-task { border-left-color: #8b5cf6; } /* Cor roxa para tarefas de projeto */
 
         .info { flex: 1; }
-        .name { font-size: 1.05rem; color: #1a1a1a; display: block; margin-bottom: 4px; }
+        .name { font-size: 1.05rem; display: block; margin-bottom: 4px; }
         .name.riscado { text-decoration: line-through; color: #888; }
         .time-label { font-size: 0.85rem; color: #666; font-weight: 500; }
 
         .actions { display: flex; gap: 15px; align-items: center; }
-        .btn-action { font-size: 1.2rem; cursor: pointer; padding: 5px; }
-        .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; }
+        .btn-action { font-size: 1.2rem; cursor: pointer; padding: 5px; border: none; background: none; }
+        .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; cursor: pointer; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        /* Controles Semanais */
-        .semana-ctrl { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
-        /* Estilo Projetos */
+        /* Projetos Card */
         .projeto-card { background: white; margin: 10px; padding: 15px; border-radius: 10px; border-top: 5px solid #8b5cf6; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .projeto-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; display: block; }
         .etapa-box { background: #f8fafc; padding: 10px; border-radius: 6px; margin-top: 10px; border: 1px solid #e2e8f0; }
-        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.9rem; }
-        .checklist-item input { width: 18px; height: 18px; margin: 0; }
 
-        /* Rodapé */
+        /* Rodapé Fixo - Ajustado para Clique no PC */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; background: #fff; color: #000; }
         .row { display: flex; gap: 8px; width: 100%; }
-        .col-data { flex: 2; }
-        .col-hora, .col-min { flex: 1; }
-        .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; margin-top: 5px; }
+        .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; cursor: pointer; }
         
         .hidden { display: none; }
     </style>
@@ -58,10 +50,10 @@
 <body>
 
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('agenda', this)">📅 Agenda</div>
-        <div class="tab" onclick="switchTab('semanal', this)">🗓️ Semanal</div>
-        <div class="tab" onclick="switchTab('projetos', this)">🏗️ Projetos</div>
-        <div class="tab" onclick="switchTab('banco', this)">💡 Ideias</div>
+        <button class="tab active" onclick="switchTab('agenda', this)">📅 Agenda</button>
+        <button class="tab" onclick="switchTab('semanal', this)">🗓️ Semanal</button>
+        <button class="tab" onclick="switchTab('projetos', this)">🏗️ Projetos</button>
+        <button class="tab" onclick="switchTab('banco', this)">💡 Ideias</button>
     </div>
 
     <div id="view-agenda">
@@ -69,18 +61,16 @@
     </div>
 
     <div id="view-semanal" class="hidden">
-        <div class="semana-ctrl">
-            <button onclick="mudarSemana(-1)">◀ Prev</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#fff; margin:10px; border-radius:8px;">
+            <button onclick="mudarSemana(-1)">◀ Ant</button>
             <span id="labelSemana" style="font-weight:bold;"></span>
-            <button onclick="mudarSemana(1)">Next ▶</button>
+            <button onclick="mudarSemana(1)">Próx ▶</button>
         </div>
         <div id="listaSemanal"></div>
     </div>
 
     <div id="view-projetos" class="hidden">
-        <div style="padding: 10px;">
-            <button class="btn-main" style="background:#8b5cf6;" onclick="abrirModalProjeto()">+ Novo Projeto Regularização</button>
-        </div>
+        <div style="padding:10px;"><button class="btn-main" style="background:#8b5cf6;" onclick="abrirModalProjeto()">+ Novo Projeto Regularização</button></div>
         <div id="listaProjetos"></div>
     </div>
 
@@ -91,9 +81,9 @@
     <div class="footer">
         <input type="text" id="inpNome" placeholder="O que vai fazer?">
         <div class="row">
-            <div class="col-data"><input type="date" id="inpData"></div>
-            <div class="col-hora"><select id="selHora"></select></div>
-            <div class="col-min"><select id="selMin"></select></div>
+            <input type="date" id="inpData" style="flex:2">
+            <select id="selHora" style="flex:1"></select>
+            <select id="selMin" style="flex:1"></select>
         </div>
         <select id="inpRepetir">
             <option value="none">Não repetir</option>
@@ -101,10 +91,10 @@
             <option value="semanal">Repetir Toda Semana</option>
             <option value="mensal">Repetir Todo Mês</option>
         </select>
-        <button id="btnSalvar" class="btn-main" onclick="adicionar()">AGENDAR</button>
+        <button class="btn-main" onclick="adicionar()">AGENDAR</button>
         <div style="display:flex; gap:10px;">
-            <button class="tab" style="flex:1; background:#f1f5f9; border:none; border-radius:8px;" onclick="exportarDados()">💾 Exportar</button>
-            <button class="tab" style="flex:1; background:#f1f5f9; border:none; border-radius:8px;" onclick="importarDados()">📂 Importar</button>
+            <button onclick="exportarDados()" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ddd; background:#f8fafc; cursor:pointer; font-size:12px;">💾 Exportar Backup</button>
+            <button onclick="importarDados()" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ddd; background:#f8fafc; cursor:pointer; font-size:12px;">📂 Importar Backup</button>
         </div>
     </div>
 
@@ -114,7 +104,7 @@
     let dataReferenciaSemana = new Date();
     let currentTab = 'agenda';
 
-    // Popular seletores
+    // Popular horas/minutos
     const sh = document.getElementById('selHora');
     const sm = document.getElementById('selMin');
     for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
@@ -130,7 +120,7 @@
     }
 
     function renderizar() {
-        if (currentTab === 'agenda') render Agenda();
+        if (currentTab === 'agenda') renderAgenda();
         if (currentTab === 'semanal') renderSemanal();
         if (currentTab === 'projetos') renderProjetos();
         if (currentTab === 'banco') renderBanco();
@@ -144,7 +134,7 @@
         const agora = new Date();
         const hojeStr = agora.toLocaleDateString('pt-BR');
         
-        // Mantém pendentes hoje
+        // Regra da Qualidade: mantém atrasados hoje
         agenda.forEach(item => {
             if (item.timestamp && !item.concluido) {
                 let d = new Date(item.timestamp);
@@ -178,17 +168,11 @@
                 ultimoDia = diaLabel;
             }
 
-            const diff = (dt - agora) / 60000;
-            let cl = 'item';
-            if (item.concluido) cl += ' done';
-            else if (diff > -20 && diff < 20) cl += ' now';
-            else if (dt < agora) cl += ' past';
-            if (item.projetoId) cl += ' project-task';
-
+            let cl = 'item ' + (item.concluido ? 'done' : (dt < agora ? 'past' : ''));
             container.innerHTML += `
                 <div class="${cl}">
                     <div class="info">
-                        <span class="name ${item.concluido ? 'riscado' : ''}">${item.projetoId ? '['+item.projetoId+'] ' : ''}${item.name}</span>
+                        <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
                         <span class="time-label">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                     </div>
                     <div class="actions">
@@ -202,32 +186,25 @@
     function renderSemanal() {
         const lista = document.getElementById('listaSemanal');
         const start = new Date(dataReferenciaSemana);
-        start.setDate(start.getDate() - start.getDay()); // Domingo
+        start.setDate(start.getDate() - start.getDay());
         const end = new Date(start);
-        end.setDate(end.getDate() + 6); // Sábado
+        end.setDate(end.getDate() + 6);
 
         document.getElementById('labelSemana').innerText = `${start.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} a ${end.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}`;
-        
         lista.innerHTML = '';
+
         for (let i=0; i<7; i++) {
             let dia = new Date(start);
             dia.setDate(dia.getDate() + i);
             let diaStr = dia.toLocaleDateString('pt-BR');
+            lista.innerHTML += `<div class="dia-divisor">${dia.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'})}</div>`;
             
-            const div = document.createElement('div');
-            div.className = 'dia-divisor';
-            if (diaStr === new Date().toLocaleDateString('pt-BR')) div.className += ' hoje';
-            div.innerText = dia.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'});
-            lista.appendChild(div);
-
-            const sublist = document.createElement('div');
-            sublist.className = 'list';
-            agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr).forEach(it => {
-                sublist.innerHTML += `<div class="item ${it.concluido?'done':''}" style="padding:10px;">
-                    <span>${new Date(it.timestamp).getHours()}h - ${it.name}</span>
-                </div>`;
+            const diaTasks = agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr);
+            let sublist = '<div class="list">';
+            diaTasks.forEach(it => {
+                sublist += `<div class="item ${it.concluido?'done':''}" style="padding:10px;">${new Date(it.timestamp).getHours()}h: ${it.name}</div>`;
             });
-            lista.appendChild(sublist);
+            lista.innerHTML += sublist + '</div>';
         }
     }
 
@@ -235,22 +212,13 @@
         const container = document.getElementById('listaProjetos');
         container.innerHTML = '';
         projetos.forEach((proj, pIdx) => {
-            let htmlDocs = proj.docs.map((doc, dIdx) => `
-                <div class="checklist-item">
-                    <input type="checkbox" ${doc.check ? 'checked' : ''} onclick="toggleDoc(${pIdx}, ${dIdx})">
-                    <span style="${doc.check?'text-decoration:line-through; color:gray':''}">${doc.nome}</span>
-                    ${!doc.check ? `<button onclick="gerarTarefaDoc(${pIdx}, '${doc.nome}')" style="font-size:10px;">Agendar</button>` : ''}
-                </div>
-            `).join('');
-
             container.innerHTML += `
                 <div class="projeto-card">
                     <span class="projeto-title">${proj.nome}</span>
                     <div class="etapa-box">
-                        <strong>Etapa Atual: ${proj.etapa}</strong>
-                        <div style="margin-top:10px;">${htmlDocs}</div>
+                        <strong>Fase: ${proj.etapa}</strong>
                     </div>
-                    <button onclick="proximaEtapa(${pIdx})" style="margin-top:10px; font-size:12px;">Avançar Etapa</button>
+                    <button onclick="excluirProjeto(${pIdx})" style="margin-top:10px; background:none; border:none; color:red; cursor:pointer;">Apagar Projeto</button>
                 </div>`;
         });
     }
@@ -259,60 +227,10 @@
         const lista = document.getElementById('listaBanco');
         lista.innerHTML = '<div class="dia-divisor">Ideias sem data</div>';
         agenda.filter(it => !it.timestamp).forEach((it, idx) => {
-            lista.innerHTML += `<div class="item no-date">
-                <div class="info"><span>${it.name}</span></div>
-                <div class="actions"><span class="btn-action" onclick="excluir(${idx})">🗑️</span></div>
-            </div>`;
+            lista.innerHTML += `<div class="item"><span>${it.name}</span><button onclick="excluir(${idx})">🗑️</button></div>`;
         });
     }
 
-    // LÓGICA DE PROJETOS
-    function abrirModalProjeto() {
-        const nome = prompt("Nome do Projeto de Regularização (ex: Cliente X - Casa Y):");
-        if (!nome) return;
-        const novo = {
-            nome: nome,
-            etapa: "Análise da Documentação",
-            docs: [
-                {nome: "Matrícula do Imóvel", check: false},
-                {nome: "Escritura", check: false},
-                {nome: "Contrato com Loteadora", check: false},
-                {nome: "ITBI", check: false}
-            ]
-        };
-        projetos.push(novo);
-        renderizar();
-    }
-
-    function toggleDoc(pIdx, dIdx) {
-        projetos[pIdx].docs[dIdx].check = !projetos[pIdx].docs[dIdx].check;
-        renderizar();
-    }
-
-    function gerarTarefaDoc(pIdx, docNome) {
-        const data = prompt("Data para providenciar/analisar " + docNome + " (AAAA-MM-DD):", new Date().toISOString().split('T')[0]);
-        if (!data) return;
-        agenda.push({
-            name: "Providenciar: " + docNome,
-            timestamp: new Date(data + "T09:00:00").getTime(),
-            concluido: false,
-            projetoId: projetos[pIdx].nome
-        });
-        alert("Tarefa criada na agenda!");
-        renderizar();
-    }
-
-    function proximaEtapa(pIdx) {
-        const etapas = ["Análise da Documentação", "Matrícula", "Fazer Projeto", "Emitir ART", "Protocolo Prefeitura"];
-        let atual = etapas.indexOf(projetos[pIdx].etapa);
-        if (atual < etapas.length - 1) {
-            projetos[pIdx].etapa = etapas[atual + 1];
-            alert("Avançado para: " + projetos[pIdx].etapa);
-            renderizar();
-        }
-    }
-
-    // AUXILIARES
     function mudarSemana(dir) {
         dataReferenciaSemana.setDate(dataReferenciaSemana.getDate() + (dir * 7));
         renderSemanal();
@@ -324,39 +242,42 @@
         const h = document.getElementById('selHora').value;
         const m = document.getElementById('selMin').value;
         if (!nome) return;
-        let ts = null;
-        if (data) ts = new Date(data + "T" + h + ":" + m + ":00").getTime();
+        let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : null;
         agenda.push({ name: nome, timestamp: ts, concluido: false });
         document.getElementById('inpNome').value = '';
         renderizar();
     }
 
-    function toggle(i) {
-        agenda[i].concluido = !agenda[i].concluido;
-        renderizar();
-    }
-
+    function toggle(i) { agenda[i].concluido = !agenda[i].concluido; renderizar(); }
     function excluir(i) { if(confirm("Apagar?")) { agenda.splice(i, 1); renderizar(); } }
+
+    function abrirModalProjeto() {
+        const n = prompt("Nome do Projeto:");
+        if(n) { projetos.push({nome: n, etapa: "Análise Documental"}); renderizar(); }
+    }
+    
+    function excluirProjeto(i) { if(confirm("Apagar projeto?")) { projetos.splice(i, 1); renderizar(); } }
 
     function exportarDados() {
         const dados = JSON.stringify({agenda, projetos});
-        navigator.clipboard.writeText(dados).then(() => alert("Copiado!"));
+        navigator.clipboard.writeText(dados).then(() => alert("Backup copiado! Cole no outro dispositivo."));
     }
 
     function importarDados() {
-        const cod = prompt("Cole backup:");
+        const cod = prompt("Cole o código de backup:");
         if (cod) {
-            const parsed = JSON.parse(cod);
-            agenda = parsed.agenda || [];
-            projetos = parsed.projetos || [];
-            renderizar();
+            try {
+                const p = JSON.parse(cod);
+                agenda = p.agenda || [];
+                projetos = p.projetos || [];
+                renderizar();
+            } catch(e) { alert("Erro!"); }
         }
     }
 
     const d = new Date();
     document.getElementById('inpData').value = d.toISOString().split('T')[0];
     renderizar();
-    setInterval(renderizar, 60000);
 </script>
 </body>
 </html>
