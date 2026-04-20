@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Sincronizada</title>
+    <title>Agenda Fabiula - Completa</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 380px; scroll-behavior: smooth; color: #333; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 300px; scroll-behavior: smooth; color: #333; }
         
-        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 10px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; }
+        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; }
         
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; overflow-x: auto; }
-        .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; font-size: 0.85rem; border: none; background: none; }
+        .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
         .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
 
         .dia-divisor { background: #e2e8f0; padding: 10px 15px; margin: 20px 10px 10px 10px; font-weight: bold; font-size: 0.9rem; color: #475569; text-transform: capitalize; border-radius: 6px; }
         .dia-divisor.hoje { background: #2563eb; color: white; }
-        .list { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
         
+        .list { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
         .item { background: white; padding: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 6px solid #2563eb; }
-        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 10px; }
-        .item.past { border-left-color: #94a3b8; opacity: 0.7; background: #f9f9f9; }
         .item.done { border-left-color: #94a3b8; opacity: 0.5; }
 
         .info { flex: 1; }
@@ -33,41 +31,49 @@
         .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; cursor: pointer; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
-        .row { display: flex; gap: 8px; width: 100%; }
+        .semana-ctrl { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin: 10px; border-radius: 8px; }
+
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px; border-top: 1px solid #ddd; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; margin-bottom: 8px; }
         .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; cursor: pointer; }
-        .btn-backup { flex: 1; padding: 8px; font-size: 11px; background: #f8fafc; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
         
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="status" class="status-nuvem">⏳ Autenticando...</div>
+    <div id="status" class="status-nuvem">⏳ Conectando...</div>
 
     <div class="tabs">
         <button class="tab active" onclick="switchTab('agenda', this)">📅 Agenda</button>
+        <button class="tab" onclick="switchTab('semanal', this)">🗓️ Semanal</button>
         <button class="tab" onclick="switchTab('projetos', this)">🏗️ Projetos</button>
         <button class="tab" onclick="switchTab('banco', this)">💡 Ideias</button>
     </div>
 
     <div id="view-agenda"><div id="minhaLista"></div></div>
-    <div id="view-projetos" class="hidden"><div style="padding:20px; color:#666;">Aba de Projetos Ativada</div></div>
+
+    <div id="view-semanal" class="hidden">
+        <div class="semana-ctrl">
+            <button onclick="mudarSemana(-1)">◀ Ant</button>
+            <span id="labelSemana" style="font-weight:bold;"></span>
+            <button onclick="mudarSemana(1)">Próx ▶</button>
+        </div>
+        <div id="listaSemanal"></div>
+    </div>
+
+    <div id="view-projetos" class="hidden"><div style="padding:20px; color:#666; text-align:center;">Módulo de Projetos Ativo</div></div>
+
     <div id="view-banco" class="hidden"><div class="list" id="listaBanco"></div></div>
 
     <div class="footer">
         <input type="text" id="inpNome" placeholder="O que vai fazer?">
-        <div class="row">
+        <div style="display:flex; gap:8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
         </div>
         <button class="btn-main" onclick="adicionar()">AGENDAR NA NUVEM</button>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-backup" onclick="recuperarLocal()">🔄 Puxar dados antigos do Celular</button>
-            <button class="btn-backup" onclick="importarManual()">📂 Colar Backup</button>
-        </div>
     </div>
 
     <script type="module">
@@ -82,8 +88,7 @@
             projectId: "agendafabiula",
             storageBucket: "agendafabiula.firebasestorage.app",
             messagingSenderId: "234579715371",
-            appId: "1:234579715371:web:5ec7ede77e169cd02f116e",
-            measurementId: "G-R8Y6MLPR52"
+            appId: "1:234579715371:web:5ec7ede77e169cd02f116e"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -93,59 +98,30 @@
 
         window.agenda = [];
         let currentTab = 'agenda';
+        let dataRefSemana = new Date();
 
-        // Login Automático para satisfazer as regras "auth != null"
         signInAnonymously(auth).catch(() => document.getElementById('status').innerText = "Erro Login ❌");
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('status').innerText = "Sincronizando... 🔄";
-                escutarNuvem();
+                onValue(agendaRef, (snapshot) => {
+                    const data = snapshot.val();
+                    window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
+                    document.getElementById('status').innerText = "Sincronizado ✅";
+                    renderizar();
+                });
             }
         });
 
-        function escutarNuvem() {
-            onValue(agendaRef, (snapshot) => {
-                const data = snapshot.val();
-                window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
-                document.getElementById('status').innerText = "Sincronizado ✅";
-                renderizar();
-            });
-        }
-
-        window.adicionar = function(itemManual = null) {
-            const nome = itemManual ? itemManual.name : document.getElementById('inpNome').value;
-            if(!nome) return;
-
-            let novo;
-            if(itemManual) {
-                novo = { ...itemManual, id: itemManual.id || Date.now() + Math.random() };
-            } else {
-                const data = document.getElementById('inpData').value;
-                const h = document.getElementById('selHora').value;
-                const m = document.getElementById('selMin').value;
-                let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : null;
-                novo = { name: nome, timestamp: ts, concluido: false, id: Date.now() };
-            }
-            
-            push(agendaRef, novo);
-            if(!itemManual) document.getElementById('inpNome').value = '';
-        };
-
-        window.toggle = function(fId, status) {
-            set(ref(db, 'agenda/' + fId + '/concluido'), !status);
-        };
-
-        window.excluir = function(fId) {
-            if(confirm("Apagar da nuvem?")) remove(ref(db, 'agenda/' + fId));
-        };
-
         window.renderizar = function() {
+            if(currentTab === 'agenda') renderAgenda();
+            if(currentTab === 'semanal') renderSemanal();
+        };
+
+        function renderAgenda() {
             const lista = document.getElementById('minhaLista');
             const agora = new Date();
-            const hojeStr = agora.toLocaleDateString('pt-BR');
-            
-            window.agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
+            window.agenda.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             lista.innerHTML = '';
             let ultimoDia = "";
             let container = null;
@@ -156,10 +132,9 @@
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
                 
                 if(diaLabel !== ultimoDia) {
-                    const isHoje = dt.toLocaleDateString('pt-BR') === hojeStr;
                     const div = document.createElement('div');
-                    div.className = `dia-divisor ${isHoje?'hoje':''}`;
-                    div.innerText = `${isHoje?'Hoje - ':''}${diaLabel}`;
+                    div.className = `dia-divisor ${dt.toLocaleDateString() === agora.toLocaleDateString() ? 'hoje' : ''}`;
+                    div.innerText = diaLabel;
                     lista.appendChild(div);
                     container = document.createElement('div');
                     container.className = 'list';
@@ -167,9 +142,8 @@
                     ultimoDia = diaLabel;
                 }
 
-                let cl = 'item ' + (item.concluido ? 'done' : (dt < agora ? 'past' : ''));
                 container.innerHTML += `
-                    <div class="${cl}">
+                    <div class="item ${item.concluido ? 'done' : ''}">
                         <div class="info">
                             <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
                             <span class="time-label">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
@@ -180,26 +154,51 @@
                         </div>
                     </div>`;
             });
-        };
+        }
 
-        window.recuperarLocal = function() {
-            const antigo = localStorage.getItem('agenda_vFinal');
-            if (antigo) {
-                const lista = JSON.parse(antigo);
-                if (confirm(`Subir ${lista.length} tarefas antigas do celular para a nuvem?`)) {
-                    lista.forEach(it => window.adicionar(it));
-                    alert("Dados migrados para a nuvem!");
-                }
+        function renderSemanal() {
+            const lista = document.getElementById('listaSemanal');
+            const start = new Date(dataRefSemana);
+            start.setDate(start.getDate() - start.getDay());
+            const end = new Date(start);
+            end.setDate(end.getDate() + 6);
+
+            document.getElementById('labelSemana').innerText = `${start.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} a ${end.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}`;
+            lista.innerHTML = '';
+
+            for (let i=0; i<7; i++) {
+                let dia = new Date(start);
+                dia.setDate(dia.getDate() + i);
+                let diaStr = dia.toLocaleDateString('pt-BR');
+                lista.innerHTML += `<div class="dia-divisor">${dia.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric'})}</div>`;
+                
+                const diaTasks = window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr);
+                let sublist = '<div class="list">';
+                diaTasks.forEach(it => {
+                    sublist += `<div class="item ${it.concluido?'done':''}" style="padding:10px;">${new Date(it.timestamp).getHours()}h: ${it.name}</div>`;
+                });
+                lista.innerHTML += sublist + '</div>';
             }
+        }
+
+        window.mudarSemana = function(dir) {
+            dataRefSemana.setDate(dataRefSemana.getDate() + (dir * 7));
+            renderSemanal();
         };
 
-        window.importarManual = function() {
-            const cod = prompt("Cole o código aqui:");
-            if (cod) { try { 
-                const p = JSON.parse(cod); 
-                (p.agenda || p).forEach(it => window.adicionar(it));
-            } catch(e) { alert("Erro!"); } }
+        window.adicionar = function() {
+            const nome = document.getElementById('inpNome').value;
+            const data = document.getElementById('inpData').value;
+            const h = document.getElementById('selHora').value;
+            const m = document.getElementById('selMin').value;
+            if(!nome) return;
+            let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : Date.now();
+            push(agendaRef, { name: nome, timestamp: ts, concluido: false, id: Date.now() });
+            document.getElementById('inpNome').value = '';
         };
+
+        window.toggle = function(fId, status) { set(ref(db, 'agenda/' + fId + '/concluido'), !status); };
+        window.excluir = function(fId) { if(confirm("Apagar?")) remove(ref(db, 'agenda/' + fId)); };
 
         const sh = document.getElementById('selHora');
         const sm = document.getElementById('selMin');
@@ -211,9 +210,9 @@
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
-            document.getElementById('view-agenda').classList.toggle('hidden', tab !== 'agenda');
-            document.getElementById('view-projetos').classList.toggle('hidden', tab !== 'projetos');
-            document.getElementById('view-banco').classList.toggle('hidden', tab !== 'banco');
+            ['view-agenda', 'view-semanal', 'view-projetos', 'view-banco'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            renderizar();
         }
     </script>
 </body>
