@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Nuvem</title>
+    <title>Agenda Fabiula - Nuvem & Recuperação</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 350px; scroll-behavior: smooth; color: #333; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 380px; scroll-behavior: smooth; color: #333; }
         
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; overflow-x: auto; }
         .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; font-size: 0.85rem; border: none; background: none; }
@@ -16,9 +16,7 @@
         .dia-divisor.hoje { background: #2563eb; color: white; }
         .list { display: flex; flex-direction: column; gap: 12px; padding: 10px; }
         
-        .item { background: white; padding: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 6px solid #2563eb; transition: 0.3s; }
-        .item.now { border-left-color: #059669; background: #f0fdf4; font-weight: bold; border-left-width: 10px; }
-        .item.past { border-left-color: #94a3b8; opacity: 0.7; background: #f9f9f9; }
+        .item { background: white; padding: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 6px solid #2563eb; }
         .item.done { border-left-color: #94a3b8; opacity: 0.5; }
 
         .info { flex: 1; }
@@ -36,6 +34,7 @@
         .row { display: flex; gap: 8px; width: 100%; }
         .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 16px; width: 100%; cursor: pointer; }
         
+        .btn-backup { flex: 1; padding: 10px; font-size: 11px; background: #f8fafc; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .status-nuvem { position: fixed; top: 60px; right: 10px; font-size: 10px; padding: 3px 8px; border-radius: 10px; background: #eee; z-index: 1001; }
         .hidden { display: none; }
     </style>
@@ -52,14 +51,7 @@
     </div>
 
     <div id="view-agenda"><div id="minhaLista"></div></div>
-    <div id="view-semanal" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#fff; margin:10px; border-radius:8px;">
-            <button onclick="mudarSemana(-1)">◀ Ant</button>
-            <span id="labelSemana" style="font-weight:bold;"></span>
-            <button onclick="mudarSemana(1)">Próx ▶</button>
-        </div>
-        <div id="listaSemanal"></div>
-    </div>
+    <div id="view-semanal" class="hidden"><div id="listaSemanal"></div></div>
     <div id="view-projetos" class="hidden"><div id="listaProjetos"></div></div>
     <div id="view-banco" class="hidden"><div class="list" id="listaBanco"></div></div>
 
@@ -70,13 +62,12 @@
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
         </div>
-        <select id="inpRepetir">
-            <option value="none">Não repetir</option>
-            <option value="diario">Repetir Todo Dia</option>
-            <option value="semanal">Toda Semana</option>
-            <option value="mensal">Todo Mês</option>
-        </select>
         <button class="btn-main" onclick="adicionar()">AGENDAR NA NUVEM</button>
+        
+        <div style="display:flex; gap:10px; margin-top:5px;">
+            <button class="btn-backup" onclick="recuperarLocal()">🔄 Importar Backup Local p/ Nuvem</button>
+            <button class="btn-backup" onclick="importarManual()">📂 Colar Código Backup</button>
+        </div>
     </div>
 
     <script type="module">
@@ -96,49 +87,70 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const agendaRef = ref(db, 'agenda');
-        const projetosRef = ref(db, 'projetos');
 
         window.agenda = [];
-        window.projetos = [];
         let currentTab = 'agenda';
-        let dataRefSemana = new Date();
 
         // Sincronização em Tempo Real
         onValue(agendaRef, (snapshot) => {
             const data = snapshot.val();
             window.agenda = data ? Object.values(data) : [];
-            document.getElementById('status').innerText = "Sincronizado ✅";
+            document.getElementById('status').innerText = "Nuvem OK ✅";
             renderizar();
         });
 
-        // Funções Globais
-        window.adicionar = function() {
-            const nome = document.getElementById('inpNome').value;
-            const data = document.getElementById('inpData').value;
-            const h = document.getElementById('selHora').value;
-            const m = document.getElementById('selMin').value;
-            const repetir = document.getElementById('inpRepetir').value;
-
+        // Adicionar na Nuvem
+        window.adicionar = function(itemManual = null) {
+            const nome = itemManual ? itemManual.name : document.getElementById('inpNome').value;
             if(!nome) return;
 
-            let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : null;
-            const novoItem = { name: nome, timestamp: ts, concluido: false, repetir: repetir, id: Date.now() };
+            let novoItem;
+            if (itemManual) {
+                novoItem = { ...itemManual, id: itemManual.id || Date.now() + Math.random() };
+            } else {
+                const data = document.getElementById('inpData').value;
+                const h = document.getElementById('selHora').value;
+                const m = document.getElementById('selMin').value;
+                let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : null;
+                novoItem = { name: nome, timestamp: ts, concluido: false, id: Date.now() };
+            }
             
-            // Salva direto no Firebase (Nuvem)
-            const novoRef = push(agendaRef);
-            set(novoRef, novoItem);
-            
-            document.getElementById('inpNome').value = '';
+            push(agendaRef, novoItem);
+            if(!itemManual) document.getElementById('inpNome').value = '';
+        };
+
+        // RECUPERAÇÃO DE DADOS ANTIGOS
+        window.recuperarLocal = function() {
+            const antigo = localStorage.getItem('agenda_vFinal');
+            if (antigo) {
+                const listaAntiga = JSON.parse(antigo);
+                if (confirm(`Encontrei ${listaAntiga.length} tarefas no seu celular. Deseja subir para a nuvem?`)) {
+                    listaAntiga.forEach(it => window.adicionar(it));
+                    alert("Sucesso! Seus dados antigos agora estão na nuvem.");
+                }
+            } else {
+                alert("Não encontrei dados antigos na memória deste aparelho.");
+            }
+        };
+
+        window.importarManual = function() {
+            const cod = prompt("Cole o código de backup aqui:");
+            if (cod) {
+                try {
+                    const parsed = JSON.parse(cod);
+                    const lista = parsed.agenda || parsed;
+                    lista.forEach(it => window.adicionar(it));
+                    alert("Importação concluída!");
+                } catch(e) { alert("Código inválido!"); }
+            }
         };
 
         window.toggle = function(id) {
-            // Localiza o item no Firebase pelo ID e inverte o status
             onValue(agendaRef, (snapshot) => {
                 const data = snapshot.val();
                 for (let key in data) {
                     if (data[key].id == id) {
-                        const itemRef = ref(db, 'agenda/' + key);
-                        set(itemRef, { ...data[key], concluido: !data[key].concluido });
+                        set(ref(db, 'agenda/' + key), { ...data[key], concluido: !data[key].concluido });
                         break;
                     }
                 }
@@ -146,7 +158,7 @@
         };
 
         window.excluir = function(id) {
-            if(!confirm("Apagar da nuvem?")) return;
+            if(!confirm("Apagar?")) return;
             onValue(agendaRef, (snapshot) => {
                 const data = snapshot.val();
                 for (let key in data) {
@@ -159,15 +171,8 @@
         };
 
         window.renderizar = function() {
-            if(currentTab === 'agenda') renderAgenda();
-            if(currentTab === 'semanal') renderSemanal();
-        }
-
-        function renderAgenda() {
             const lista = document.getElementById('minhaLista');
             const agora = new Date();
-            const hojeStr = agora.toLocaleDateString('pt-BR');
-            
             window.agenda.sort((a, b) => (a.timestamp || 9999999999999) - (b.timestamp || 9999999999999));
             lista.innerHTML = '';
             let ultimoDia = "";
@@ -179,10 +184,9 @@
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
                 
                 if(diaLabel !== ultimoDia) {
-                    const isHoje = dt.toLocaleDateString('pt-BR') === hojeStr;
                     const div = document.createElement('div');
-                    div.className = `dia-divisor ${isHoje?'hoje':''}`;
-                    div.innerText = `${isHoje?'Hoje - ':''}${diaLabel}`;
+                    div.className = 'dia-divisor';
+                    div.innerText = diaLabel;
                     lista.appendChild(div);
                     container = document.createElement('div');
                     container.className = 'list';
@@ -190,12 +194,12 @@
                     ultimoDia = diaLabel;
                 }
 
-                let cl = 'item ' + (item.concluido ? 'done' : (dt < agora ? 'past' : ''));
+                let cl = 'item ' + (item.concluido ? 'done' : '');
                 container.innerHTML += `
                     <div class="${cl}">
                         <div class="info">
                             <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                            <span class="time-label">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span class="time-label">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
                         </div>
                         <div class="actions">
                             <span class="btn-action" onclick="excluir(${item.id})">🗑️</span>
@@ -203,9 +207,9 @@
                         </div>
                     </div>`;
             });
-        }
+        };
 
-        // Setup inicial de horas
+        // Setup inicial
         const sh = document.getElementById('selHora');
         const sm = document.getElementById('selMin');
         for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
@@ -218,7 +222,6 @@
             el.classList.add('active');
             ['view-agenda', 'view-semanal', 'view-projetos', 'view-banco'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById('view-' + tab).classList.remove('hidden');
-            renderizar();
         }
     </script>
 </body>
