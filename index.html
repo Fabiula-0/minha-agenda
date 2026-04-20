@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Completa</title>
+    <title>Agenda Fabiula - Inteligente</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 300px; scroll-behavior: smooth; color: #333; }
         
-        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; }
+        /* Status que desaparece */
+        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; transition: opacity 0.5s; opacity: 0; pointer-events: none; }
+        .status-nuvem.show { opacity: 1; }
         
         .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; overflow-x: auto; }
         .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
@@ -31,7 +33,7 @@
         .check-btn { width: 38px; height: 38px; border: 2px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; font-weight: bold; cursor: pointer; }
         .check-btn.active { background: #059669; color: white; border-color: #059669; }
 
-        .semana-ctrl { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin: 10px; border-radius: 8px; }
+        .semana-ctrl { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 20px; border-top: 1px solid #ddd; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); }
         input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; margin-bottom: 8px; }
@@ -42,7 +44,7 @@
 </head>
 <body>
 
-    <div id="status" class="status-nuvem">⏳ Conectando...</div>
+    <div id="status" class="status-nuvem">Sincronizado ✅</div>
 
     <div class="tabs">
         <button class="tab active" onclick="switchTab('agenda', this)">📅 Agenda</button>
@@ -62,8 +64,7 @@
         <div id="listaSemanal"></div>
     </div>
 
-    <div id="view-projetos" class="hidden"><div style="padding:20px; color:#666; text-align:center;">Módulo de Projetos Ativo</div></div>
-
+    <div id="view-projetos" class="hidden"><div style="padding:20px; color:#666; text-align:center;">Módulo de Projetos</div></div>
     <div id="view-banco" class="hidden"><div class="list" id="listaBanco"></div></div>
 
     <div class="footer">
@@ -100,22 +101,28 @@
         let currentTab = 'agenda';
         let dataRefSemana = new Date();
 
-        signInAnonymously(auth).catch(() => document.getElementById('status').innerText = "Erro Login ❌");
+        function showStatus() {
+            const s = document.getElementById('status');
+            s.classList.add('show');
+            setTimeout(() => s.classList.remove('show'), 3000);
+        }
+
+        signInAnonymously(auth).catch(console.error);
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 onValue(agendaRef, (snapshot) => {
                     const data = snapshot.val();
                     window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
-                    document.getElementById('status').innerText = "Sincronizado ✅";
+                    showStatus();
                     renderizar();
                 });
             }
         });
 
         window.renderizar = function() {
-            if(currentTab === 'agenda') renderAgenda();
-            if(currentTab === 'semanal') renderSemanal();
+            renderAgenda();
+            renderSemanal();
         };
 
         function renderAgenda() {
