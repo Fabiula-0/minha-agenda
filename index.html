@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v17</title>
+    <title>Agenda Fabiula - v18</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -26,7 +26,7 @@
         .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; }
         .col-header { padding: 8px; text-align: center; border-bottom: 1px solid #333; background: #222; }
         .col-header.hoje { background: #2563eb; color: #fff; }
-        .task-card { font-size: 0.7rem; padding: 6px; margin: 2px; border-radius: 4px; background: #3b78db; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+        .task-card { font-size: 0.7rem; padding: 6px; margin: 2px; border-radius: 4px; background: #3b78db; color: #fff; }
 
         .projeto-card { background: #1f1f1f; margin: 15px; padding: 20px; border-radius: 12px; border-top: 6px solid #8b5cf6; }
         .pergunta-box { background: #252525; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #333; }
@@ -100,7 +100,7 @@
                     const val = snap.val();
                     window.agenda = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderizarTudo();
-                    if(currentTab === 'agenda') setTimeout(focarProxima, 500);
+                    if(currentTab === 'agenda') setTimeout(focarProxima, 800);
                 });
                 onValue(ref(db, 'projetos'), (snap) => {
                     const val = snap.val();
@@ -115,7 +115,7 @@
             const proxima = window.agenda
                 .filter(it => it.timestamp && !it.concluido)
                 .sort((a,b) => a.timestamp - b.timestamp)
-                .find(it => it.timestamp > (agora - 3600000));
+                .find(it => it.timestamp > (agora - 1800000)); // Meia hora de tolerância
 
             if(proxima) {
                 const el = document.getElementById("task-" + proxima.firebaseId);
@@ -141,11 +141,37 @@
                         <small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small>
                     </div>
                     <div style="display:flex; align-items:center;">
-                        <span onclick="editarTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">✏️</span>
+                        <span onclick="editarTarefaCompleta('${item.firebaseId}')" style="cursor:pointer; margin-right:15px; font-size:1.1rem;">✏️</span>
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>
                 </div>`;
+            });
+        };
+
+        window.editarTarefaCompleta = function(id) {
+            const item = window.agenda.find(it => it.firebaseId === id);
+            const novoNome = prompt("Editar nome da tarefa:", item.name);
+            if(novoNome === null) return;
+
+            let novoTimestamp = item.timestamp;
+            if(item.timestamp) {
+                const dtAtual = new Date(item.timestamp);
+                const dataPadrao = dtAtual.toISOString().split('T')[0];
+                const horaPadrao = dtAtual.getHours().toString().padStart(2,'0') + ":" + dtAtual.getMinutes().toString().padStart(2,'0');
+                
+                const novaData = prompt("Editar Data (AAAA-MM-DD):", dataPadrao);
+                if(novaData) {
+                    const novaHora = prompt("Editar Hora (HH:MM):", horaPadrao);
+                    if(novaHora) {
+                        novoTimestamp = new Date(novaData + "T" + novaHora + ":00").getTime();
+                    }
+                }
+            }
+
+            update(ref(db, `agenda/${id}`), { 
+                name: novoNome, 
+                timestamp: novoTimestamp 
             });
         };
 
@@ -184,12 +210,13 @@
 
         window.renderSemana = function() {
             const corpo = document.getElementById('corpoSemana');
-            const start = new Date(); start.setDate(start.getDate() - start.getDay());
+            const hj = new Date();
+            const start = new Date(hj); start.setDate(hj.getDate() - hj.getDay());
             corpo.innerHTML = '';
             for (let i = 0; i < 7; i++) {
                 let dia = new Date(start); dia.setDate(dia.getDate() + i);
                 const col = document.createElement('div'); col.className = 'coluna-dia';
-                col.innerHTML = `<div class="col-header ${dia.toLocaleDateString() === new Date().toLocaleDateString() ? 'hoje' : ''}">${dia.getDate()}</div>`;
+                col.innerHTML = `<div class="col-header ${dia.toLocaleDateString() === hj.toLocaleDateString() ? 'hoje' : ''}">${dia.getDate()}</div>`;
                 window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString() === dia.toLocaleDateString()).forEach(it => {
                     col.innerHTML += `<div class="task-card ${it.concluido ? 'done-global' : ''}">${it.name}</div>`;
                 });
@@ -202,13 +229,12 @@
             window.agenda.filter(it => !it.timestamp).forEach(nota => {
                 container.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;">
                     <span style="display:block; margin-bottom:10px;">${nota.name}</span>
-                    <button onclick="editarTarefa('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️ Editar</button>
+                    <button onclick="editarTarefaCompleta('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️ Editar Nome</button>
                     <span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer; margin-left:10px;">[ REMOVER ]</span>
                 </div>`;
             });
         };
 
-        window.editarTarefa = function(id) { const item = window.agenda.find(it => it.firebaseId === id); const n = prompt("Novo nome:", item.name); if(n) update(ref(db, `agenda/${id}`), {name: n}); };
         window.editarProjeto = function(id) { const proj = window.projetos.find(p => p.firebaseId === id); const n = prompt("Novo nome projeto:", proj.nome); if(n) update(ref(db, `projetos/${id}`), {nome: n}); };
         window.toggleTarefa = function(fId, s) { update(ref(db, `agenda/${fId}`), { concluido: !s }); };
         window.excluirTarefa = function(fId) { if(confirm("Excluir?")) remove(ref(db, `agenda/${fId}`)); };
