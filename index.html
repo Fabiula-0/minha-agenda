@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v18</title>
+    <title>Agenda Fabiula - v19</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
-        
-        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #8ab4f8; z-index: 2000; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
-        .status-nuvem.show { opacity: 1; }
         
         .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; }
         .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
@@ -20,32 +17,38 @@
         .done-global { opacity: 0.25 !important; background: #1a1a1a !important; border-left-color: #333 !important; }
 
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
-        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; transition: all 0.3s; }
+        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
 
-        .semana-container { display: flex; width: 100%; padding: 5px; background: #121212; justify-content: space-between; }
-        .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; }
-        .col-header { padding: 8px; text-align: center; border-bottom: 1px solid #333; background: #222; }
-        .col-header.hoje { background: #2563eb; color: #fff; }
-        .task-card { font-size: 0.7rem; padding: 6px; margin: 2px; border-radius: 4px; background: #3b78db; color: #fff; }
-
-        .projeto-card { background: #1f1f1f; margin: 15px; padding: 20px; border-radius: 12px; border-top: 6px solid #8b5cf6; }
-        .pergunta-box { background: #252525; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #333; }
-        .inp-pergunta { width: 100%; background: #121212; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
-        .hist-fluxo { margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; font-size: 0.8rem; }
+        /* MODAL DE EDIÇÃO */
+        #modalEdicao { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #252525; padding: 20px; border-radius: 15px; border: 1px solid #444; z-index: 2000; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1999; }
+        .inp-edit { width: 100%; background: #121212; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 1rem; }
 
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; }
         input, select { background: #2d2d2d; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 16px; outline: none; }
         .btn-main { background: #8ab4f8; color: #000; border: none; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
         
+        .btn-salvar { background: #34d399; color: #000; border: none; padding: 10px; border-radius: 5px; font-weight: bold; width: 100%; cursor: pointer; }
+        .btn-cancelar { background: #555; color: #fff; border: none; padding: 10px; border-radius: 5px; width: 100%; cursor: pointer; margin-top: 5px; }
+
         @media (max-width: 900px) {
-            .semana-container { flex-direction: column; }
-            .coluna-dia { width: 100%; min-height: auto; margin-bottom: 5px; }
+            .semana-container { display: flex; flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
-    <div id="status" class="status-nuvem">Sincronizado ✅</div>
+    <div id="overlay" class="overlay hidden" onclick="fecharModal()"></div>
+    <div id="modalEdicao" class="hidden">
+        <h3 style="margin-top:0; color:#8ab4f8;">Editar Atividade</h3>
+        <input type="text" id="editNome" class="inp-edit" placeholder="Nome...">
+        <div id="editCamposData">
+            <label style="font-size: 0.7rem; color: #aaa;">Data e Hora:</label>
+            <input type="datetime-local" id="editDataHora" class="inp-edit">
+        </div>
+        <button class="btn-salvar" onclick="salvarEdicao()">ATUALIZAR</button>
+        <button class="btn-cancelar" onclick="fecharModal()">CANCELAR</button>
+    </div>
 
     <div class="tabs">
         <button id="btn-agenda" class="tab active" onclick="switchTab('agenda')">📅 LISTA</button>
@@ -55,13 +58,13 @@
     </div>
 
     <div id="view-agenda"><div id="minhaLista"></div></div>
-    <div id="view-semanal" class="hidden"><div id="corpoSemana" class="semana-container"></div></div>
+    <div id="view-semanal" class="hidden"><div id="corpoSemana" style="padding:10px;"></div></div>
     <div id="view-projetos" class="hidden"><div id="listaProjetos"></div></div>
-    <div id="view-notas" class="hidden"><div id="listaNotas" style="padding:15px; display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap:15px;"></div></div>
+    <div id="view-notas" class="hidden"><div id="listaNotas" style="padding:15px;"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Tarefa ou Nota...">
-        <div id="controlesData" style="display:flex; gap:8px;">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Nova tarefa...">
+        <div style="display:flex; gap:8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
@@ -89,7 +92,7 @@
         const auth = getAuth(app);
         
         window.agenda = [];
-        window.projetos = [];
+        let idSendoEditado = null;
         let currentTab = 'agenda';
 
         signInAnonymously(auth);
@@ -103,28 +106,50 @@
                     if(currentTab === 'agenda') setTimeout(focarProxima, 800);
                 });
                 onValue(ref(db, 'projetos'), (snap) => {
-                    const val = snap.val();
-                    window.projetos = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
-                    renderizarTudo();
+                    window.projetos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({...v, firebaseId: id})) : [];
+                    renderProjetos();
                 });
             }
         });
 
-        function focarProxima() {
-            const agora = Date.now();
-            const proxima = window.agenda
-                .filter(it => it.timestamp && !it.concluido)
-                .sort((a,b) => a.timestamp - b.timestamp)
-                .find(it => it.timestamp > (agora - 1800000)); // Meia hora de tolerância
-
-            if(proxima) {
-                const el = document.getElementById("task-" + proxima.firebaseId);
-                if(el) {
-                    const top = el.getBoundingClientRect().top + window.pageYOffset - 150;
-                    window.scrollTo({ top: top, behavior: 'smooth' });
-                }
+        window.abrirModalEdicao = function(id) {
+            idSendoEditado = id;
+            const item = window.agenda.find(it => it.firebaseId === id);
+            document.getElementById('editNome').value = item.name;
+            
+            if(item.timestamp) {
+                document.getElementById('editCamposData').classList.remove('hidden');
+                // Formata timestamp para o input datetime-local (YYYY-MM-DDTHH:MM)
+                const d = new Date(item.timestamp);
+                const localISO = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+                document.getElementById('editDataHora').value = localISO;
+            } else {
+                document.getElementById('editCamposData').classList.add('hidden');
             }
-        }
+            
+            document.getElementById('modalEdicao').classList.remove('hidden');
+            document.getElementById('overlay').classList.remove('hidden');
+        };
+
+        window.fecharModal = function() {
+            document.getElementById('modalEdicao').classList.add('hidden');
+            document.getElementById('overlay').classList.add('hidden');
+            idSendoEditado = null;
+        };
+
+        window.salvarEdicao = function() {
+            if(!idSendoEditado) return;
+            const item = window.agenda.find(it => it.firebaseId === idSendoEditado);
+            let dados = { name: document.getElementById('editNome').value };
+            
+            if(item.timestamp) {
+                const novaData = document.getElementById('editDataHora').value;
+                if(novaData) dados.timestamp = new Date(novaData).getTime();
+            }
+            
+            update(ref(db, `agenda/${idSendoEditado}`), dados);
+            fecharModal();
+        };
 
         window.renderLista = function() {
             const lista = document.getElementById('minhaLista');
@@ -136,12 +161,9 @@
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
                 if(diaLabel !== ultimoDia) { lista.innerHTML += `<div class="dia-divisor">${diaLabel}</div>`; ultimoDia = diaLabel; }
                 lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido ? 'done-global' : ''}">
-                    <div style="flex:1">
-                        <span class="${item.concluido ? 'riscado' : ''}">${item.name}</span><br>
-                        <small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small>
-                    </div>
+                    <div style="flex:1"><span class="${item.concluido ? 'riscado' : ''}">${item.name}</span><br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small></div>
                     <div style="display:flex; align-items:center;">
-                        <span onclick="editarTarefaCompleta('${item.firebaseId}')" style="cursor:pointer; margin-right:15px; font-size:1.1rem;">✏️</span>
+                        <span onclick="abrirModalEdicao('${item.firebaseId}')" style="cursor:pointer; margin-right:15px; font-size:1.2rem;">✏️</span>
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>
@@ -149,96 +171,18 @@
             });
         };
 
-        window.editarTarefaCompleta = function(id) {
-            const item = window.agenda.find(it => it.firebaseId === id);
-            const novoNome = prompt("Editar nome da tarefa:", item.name);
-            if(novoNome === null) return;
-
-            let novoTimestamp = item.timestamp;
-            if(item.timestamp) {
-                const dtAtual = new Date(item.timestamp);
-                const dataPadrao = dtAtual.toISOString().split('T')[0];
-                const horaPadrao = dtAtual.getHours().toString().padStart(2,'0') + ":" + dtAtual.getMinutes().toString().padStart(2,'0');
-                
-                const novaData = prompt("Editar Data (AAAA-MM-DD):", dataPadrao);
-                if(novaData) {
-                    const novaHora = prompt("Editar Hora (HH:MM):", horaPadrao);
-                    if(novaHora) {
-                        novoTimestamp = new Date(novaData + "T" + novaHora + ":00").getTime();
-                    }
-                }
+        function focarProxima() {
+            const agora = Date.now();
+            const proxima = window.agenda.filter(it => it.timestamp && !it.concluido).sort((a,b) => a.timestamp - b.timestamp).find(it => it.timestamp > (agora - 1800000));
+            if(proxima) {
+                const el = document.getElementById("task-" + proxima.firebaseId);
+                if(el) window.scrollTo({ top: el.getBoundingClientRect().top + window.pageYOffset - 150, behavior: 'smooth' });
             }
+        }
 
-            update(ref(db, `agenda/${id}`), { 
-                name: novoNome, 
-                timestamp: novoTimestamp 
-            });
-        };
-
-        window.renderProjetos = function() {
-            const container = document.getElementById('listaProjetos');
-            container.innerHTML = '<div style="padding: 15px;"><button class="btn-main" style="background:#8b5cf6; color:white;" onclick="novoProjeto()">+ Iniciar Novo Projeto</button></div>';
-            window.projetos.forEach(proj => {
-                let histHTML = (proj.historico || []).map(h => `<div style="padding:5px 0; border-bottom:1px solid #333;"><b>${h.q}</b>: <span style="color:${h.a==='SIM'?'#34d399':'#f87171'}">${h.a}</span></div>`).join('');
-                container.innerHTML += `<div class="projeto-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong onclick="editarProjeto('${proj.firebaseId}')" style="cursor:pointer;">${proj.nome} ✏️</strong>
-                        <span onclick="excluirProjeto('${proj.firebaseId}')" style="color:#f44; cursor:pointer;">Excluir</span>
-                    </div>
-                    <div class="pergunta-box">
-                        <input type="text" id="inpQ-${proj.firebaseId}" class="inp-pergunta" placeholder="Próxima pergunta...">
-                        <button style="background:#059669; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;" onclick="processarFluxo('${proj.firebaseId}', 'SIM')">SIM</button>
-                        <button style="background:#dc2626; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer; margin-left:5px;" onclick="processarFluxo('${proj.firebaseId}', 'NÃO')">NÃO</button>
-                    </div>
-                    <div class="hist-fluxo">
-                        <details><summary style="cursor:pointer; color:#8ab4f8;">Ver Histórico do Fluxo</summary>${histHTML || 'Nenhum passo registrado.'}</details>
-                    </div>
-                </div>`;
-            });
-        };
-
-        window.processarFluxo = function(pId, resp) {
-            const q = document.getElementById(`inpQ-${pId}`).value; if(!q) return;
-            const p = window.projetos.find(x => x.firebaseId === pId); if(!p.historico) p.historico = [];
-            p.historico.push({q:q, a:resp});
-            if(resp === 'NÃO') {
-                const data = prompt("Agendar pendência para quando?", new Date().toISOString().split('T')[0]);
-                if(data) push(ref(db, 'agenda'), { name: `[${p.nome}] ${q}`, timestamp: new Date(data+"T09:00:00").getTime(), concluido: false });
-            }
-            update(ref(db, `projetos/${pId}`), { historico: p.historico });
-        };
-
-        window.renderSemana = function() {
-            const corpo = document.getElementById('corpoSemana');
-            const hj = new Date();
-            const start = new Date(hj); start.setDate(hj.getDate() - hj.getDay());
-            corpo.innerHTML = '';
-            for (let i = 0; i < 7; i++) {
-                let dia = new Date(start); dia.setDate(dia.getDate() + i);
-                const col = document.createElement('div'); col.className = 'coluna-dia';
-                col.innerHTML = `<div class="col-header ${dia.toLocaleDateString() === hj.toLocaleDateString() ? 'hoje' : ''}">${dia.getDate()}</div>`;
-                window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString() === dia.toLocaleDateString()).forEach(it => {
-                    col.innerHTML += `<div class="task-card ${it.concluido ? 'done-global' : ''}">${it.name}</div>`;
-                });
-                corpo.appendChild(col);
-            }
-        };
-
-        window.renderNotas = function() {
-            const container = document.getElementById('listaNotas'); container.innerHTML = '';
-            window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                container.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;">
-                    <span style="display:block; margin-bottom:10px;">${nota.name}</span>
-                    <button onclick="editarTarefaCompleta('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️ Editar Nome</button>
-                    <span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer; margin-left:10px;">[ REMOVER ]</span>
-                </div>`;
-            });
-        };
-
-        window.editarProjeto = function(id) { const proj = window.projetos.find(p => p.firebaseId === id); const n = prompt("Novo nome projeto:", proj.nome); if(n) update(ref(db, `projetos/${id}`), {nome: n}); };
+        window.renderizarTudo = function() { renderLista(); renderNotas(); };
         window.toggleTarefa = function(fId, s) { update(ref(db, `agenda/${fId}`), { concluido: !s }); };
         window.excluirTarefa = function(fId) { if(confirm("Excluir?")) remove(ref(db, `agenda/${fId}`)); };
-        window.excluirProjeto = function(fId) { if(confirm("Excluir projeto?")) remove(ref(db, `projetos/${fId}`)); };
         window.switchTab = function(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -247,12 +191,24 @@
             document.getElementById('view-' + tab).classList.remove('hidden');
             renderizarTudo();
         };
-        window.renderizarTudo = function() { renderLista(); renderSemana(); renderProjetos(); renderNotas(); };
-        window.novoProjeto = function() { const n = prompt("Nome do Projeto:"); if(n) push(ref(db, 'projetos'), { nome: n, historico: [], checkpoint: 'inicio' }); };
+
+        window.renderNotas = function() {
+            const container = document.getElementById('listaNotas'); container.innerHTML = '';
+            window.agenda.filter(it => !it.timestamp).forEach(nota => {
+                container.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; margin-bottom:10px; border-top:4px solid #fbbc04;">
+                    <span>${nota.name}</span><br><br>
+                    <button onclick="abrirModalEdicao('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️ Editar</button>
+                    <span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer; margin-left:15px;">[ EXCLUIR ]</span>
+                </div>`;
+            });
+        };
+
         window.adicionar = function() {
             const nome = document.getElementById('inpNome').value; if(!nome) return;
             let obj = { name: nome, concluido: false };
-            if(currentTab !== 'notas' && document.getElementById('inpData').value) obj.timestamp = new Date(document.getElementById('inpData').value + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime();
+            if(currentTab !== 'notas' && document.getElementById('inpData').value) {
+                obj.timestamp = new Date(document.getElementById('inpData').value + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime();
+            }
             push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = '';
         };
 
