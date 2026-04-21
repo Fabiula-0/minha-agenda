@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Colunas Fixas</title>
+    <title>Agenda Fabiula - Completa v8</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -11,59 +11,32 @@
         .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #8ab4f8; z-index: 2000; opacity: 0; transition: opacity 0.5s; }
         .status-nuvem.show { opacity: 1; }
         
-        .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; }
-        .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.9rem; }
+        .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; overflow-x: auto; }
+        .tab { flex: 1; min-width: 90px; padding: 15px 5px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
         .tab.active { color: #8ab4f8; border-bottom: 3px solid #8ab4f8; background: #252525; }
 
-        /* LISTA PRINCIPAL */
+        /* LISTA DIÁRIA */
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
         .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
         .item.done { opacity: 0.3; border-left-color: #555; }
         .prox-pendente { border: 2px solid #8ab4f8 !important; box-shadow: 0 0 15px rgba(138, 180, 248, 0.6); }
 
-        /* ESTRUTURA SEMANAL - DIVISÃO IGUAL PELA TELA */
-        .semana-container { 
-            display: flex; 
-            width: 100%; 
-            padding: 5px; 
-            background: #121212; 
-            justify-content: space-between;
-        }
-
-        .coluna-dia { 
-            width: 14%; /* 100% dividido por 7 dias */
-            background: #181818; 
-            border: 1px solid #252525;
-            display: flex; 
-            flex-direction: column; 
-            min-height: 450px; 
-            overflow: hidden; /* Corta o que sobrar */
-        }
-
-        .col-header { 
-            padding: 8px; 
-            text-align: center; 
-            border-bottom: 1px solid #333; 
-            background: #222;
-        }
+        /* SEMANA - COLUNAS FIXAS PC */
+        .semana-container { display: flex; width: 100%; padding: 5px; background: #121212; justify-content: space-between; }
+        .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; overflow: hidden; }
+        .col-header { padding: 8px; text-align: center; border-bottom: 1px solid #333; background: #222; }
         .col-header.hoje { background: #2563eb; color: #fff; }
+        .task-card { font-size: 0.7rem; padding: 5px; margin: 2px; border-radius: 3px; background: #3b78db; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 2px solid rgba(0,0,0,0.3); }
+        .task-card.done { background: #444; opacity: 0.5; }
 
-        .task-card { 
-            font-size: 0.7rem; 
-            padding: 5px; 
-            margin: 2px; 
-            border-radius: 3px; 
-            background: #3b78db; 
-            color: #fff; 
-            white-space: nowrap; /* Não pula linha */
-            overflow: hidden; /* Corta o texto */
-            text-overflow: ellipsis; /* Coloca os ... */
-            border-left: 2px solid rgba(0,0,0,0.3);
-        }
-        .task-card.done { background: #444; opacity: 0.5; text-decoration: line-through; }
+        /* PROJETOS */
+        .projeto-card { background: #1f1f1f; margin: 10px; padding: 15px; border-radius: 10px; border-top: 5px solid #8b5cf6; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .etapa-box { background: #252525; padding: 10px; border-radius: 6px; margin-top: 10px; border: 1px solid #333; }
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.85rem; }
+        .checklist-item input { width: 16px; height: 16px; cursor: pointer; }
 
         /* NOTAS */
-        #listaNotas { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        #listaNotas { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
         .nota-card { background: #2d2d2d; padding: 15px; border-radius: 10px; border-top: 4px solid #fbbc04; }
 
         /* FOOTER */
@@ -73,11 +46,10 @@
         
         .hidden { display: none !important; }
 
-        /* Ajuste Celular: No celular não dá pra ser 14%, então ele vira lista */
         @media (max-width: 900px) {
             .semana-container { flex-direction: column; }
-            .coluna-dia { width: 100%; min-height: auto; margin-bottom: 10px; border: none; border-bottom: 1px solid #333; }
-            .task-card { white-space: normal; } /* No celular pode ler tudo */
+            .coluna-dia { width: 100%; min-height: auto; margin-bottom: 5px; }
+            .task-card { white-space: normal; }
         }
     </style>
 </head>
@@ -88,6 +60,7 @@
     <div class="tabs">
         <button id="btn-agenda" class="tab active" onclick="switchTab('agenda')">📅 LISTA</button>
         <button id="btn-semanal" class="tab" onclick="switchTab('semanal')">🗓️ SEMANA</button>
+        <button id="btn-projetos" class="tab" onclick="switchTab('projetos')">🏗️ PROJETOS</button>
         <button id="btn-notas" class="tab" onclick="switchTab('notas')">💡 NOTAS</button>
     </div>
 
@@ -102,10 +75,15 @@
         <div id="corpoSemana" class="semana-container"></div>
     </div>
 
+    <div id="view-projetos" class="hidden">
+        <div style="padding: 10px;"><button class="btn-main" style="background:#8b5cf6;" onclick="abrirModalProjeto()">+ Novo Projeto Regularização</button></div>
+        <div id="listaProjetos"></div>
+    </div>
+
     <div id="view-notas" class="hidden"><div id="listaNotas"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Tarefa ou Nota...">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Título...">
         <div id="controlesData" style="display:flex; gap:8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
@@ -133,8 +111,10 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
         const agendaRef = ref(db, 'agenda');
+        const projRef = ref(db, 'projetos');
 
         window.agenda = [];
+        window.projetos = [];
         let currentTab = 'agenda';
         let dataRefSemana = new Date();
 
@@ -145,6 +125,11 @@
                 onValue(agendaRef, (snapshot) => {
                     const data = snapshot.val();
                     window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
+                    renderizarTudo();
+                });
+                onValue(projRef, (snapshot) => {
+                    const data = snapshot.val();
+                    window.projetos = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
                     document.getElementById('status').classList.add('show');
                     setTimeout(() => document.getElementById('status').classList.remove('show'), 2000);
                     renderizarTudo();
@@ -156,9 +141,9 @@
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('btn-' + tab).classList.add('active');
-            ['view-agenda', 'view-semanal', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById('view-' + tab).classList.remove('hidden');
-            document.getElementById('controlesData').style.display = (tab === 'notas') ? 'none' : 'flex';
+            document.getElementById('controlesData').style.display = (tab === 'notas' || tab === 'projetos') ? 'none' : 'flex';
             renderizarTudo();
             if(tab === 'agenda') setTimeout(focarProxima, 600);
         };
@@ -166,6 +151,7 @@
         function renderizarTudo() {
             renderLista();
             renderSemana();
+            renderProjetos();
             renderNotas();
         }
 
@@ -174,7 +160,6 @@
             window.agenda.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             lista.innerHTML = '';
             let ultimoDia = "";
-
             window.agenda.filter(it => it.timestamp).forEach((item) => {
                 const dt = new Date(item.timestamp);
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
@@ -185,19 +170,16 @@
                     lista.appendChild(div);
                     ultimoDia = diaLabel;
                 }
-                const itemDiv = document.createElement('div');
-                itemDiv.id = "task-" + item.firebaseId;
-                itemDiv.className = `item ${item.concluido ? 'done' : ''}`;
-                itemDiv.innerHTML = `
+                lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido?'done':''}">
                     <div class="info">
-                        <span style="font-size:1.1rem" class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
+                        <span class="name ${item.concluido?'riscado':''}">${item.projetoId?'['+item.projetoId+'] ':''}${item.name}</span>
                         <span style="color:#aaa; font-size:0.8rem;">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
                     </div>
-                    <div style="display:flex; gap:20px; align-items:center;">
-                        <span onclick="excluir('${item.firebaseId}')" style="cursor:pointer; font-size:1.2rem;">🗑️</span>
-                        <span style="font-size:1.8rem; cursor:pointer" onclick="toggle('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
-                    </div>`;
-                lista.appendChild(itemDiv);
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer">🗑️</span>
+                        <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
+                    </div>
+                </div>`;
             });
         }
 
@@ -217,27 +199,21 @@
         function renderSemana() {
             const corpo = document.getElementById('corpoSemana');
             const start = new Date(dataRefSemana);
-            // Começa Domingo como na sua foto
             start.setDate(start.getDate() - start.getDay());
             document.getElementById('labelMes').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-            
             corpo.innerHTML = '';
             const nomes = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-
             for (let i = 0; i < 7; i++) {
                 let dia = new Date(start);
                 dia.setDate(dia.getDate() + i);
                 let diaStr = dia.toLocaleDateString('pt-BR');
-                
                 const col = document.createElement('div');
                 col.className = 'coluna-dia';
                 const isHoje = diaStr === new Date().toLocaleDateString('pt-BR');
-                
                 col.innerHTML = `<div class="col-header ${isHoje?'hoje':''}">
                     <span style="font-size:0.6rem; display:block; opacity:0.6;">${nomes[i]}</span>
                     <span style="font-size:1.2rem; font-weight:bold;">${dia.getDate()}</span>
                 </div>`;
-                
                 window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr).forEach(it => {
                     const h = new Date(it.timestamp).getHours().toString().padStart(2, '0');
                     col.innerHTML += `<div class="task-card ${it.concluido?'done':''}"><b>${h}h</b> ${it.name}</div>`;
@@ -246,44 +222,29 @@
             }
         }
 
-        function renderNotas() {
-            const container = document.getElementById('listaNotas');
+        function renderProjetos() {
+            const container = document.getElementById('listaProjetos');
             container.innerHTML = '';
-            window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                const div = document.createElement('div');
-                div.className = 'nota-card';
-                div.innerHTML = `<span>${nota.name}</span><br>
-                <span onclick="excluir('${nota.firebaseId}')" style="color:#ff6b6b; font-size:0.7rem; cursor:pointer; margin-top:15px; display:inline-block;">[ EXCLUIR ]</span>`;
-                container.appendChild(div);
+            window.projetos.forEach((proj) => {
+                let htmlDocs = proj.docs.map((doc, dIdx) => `
+                    <div class="checklist-item">
+                        <input type="checkbox" ${doc.check?'checked':''} onclick="toggleDoc('${proj.firebaseId}', ${dIdx})">
+                        <span style="${doc.check?'text-decoration:line-through; color:gray':''}">${doc.nome}</span>
+                        ${!doc.check ? `<button onclick="gerarTarefaDoc('${proj.firebaseId}', '${doc.nome}')" style="font-size:10px; background:#333; color:#fff; border:none; padding:3px 6px; border-radius:4px; cursor:pointer;">Agendar</button>` : ''}
+                    </div>`).join('');
+                container.innerHTML += `
+                    <div class="projeto-card">
+                        <span style="font-weight:bold; font-size:1.1rem;">${proj.nome}</span>
+                        <div class="etapa-box">
+                            <strong style="color:#8ab4f8;">Fase: ${proj.etapa}</strong>
+                            <div style="margin-top:10px;">${htmlDocs}</div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:15px;">
+                            <button onclick="proximaEtapa('${proj.firebaseId}')" style="font-size:11px; padding:8px; border-radius:6px; border:none; background:#8ab4f8; font-weight:bold; cursor:pointer;">Avançar Etapa</button>
+                            <button onclick="excluirProjeto('${proj.firebaseId}')" style="background:none; border:none; color:#f44; cursor:pointer; font-size:11px;">Excluir</button>
+                        </div>
+                    </div>`;
             });
         }
 
-        window.mudarSemana = function(dir) { dataRefSemana.setDate(dataRefSemana.getDate() + (dir * 7)); renderSemana(); };
-
-        window.adicionar = function() {
-            const nome = document.getElementById('inpNome').value;
-            const data = document.getElementById('inpData').value;
-            const h = document.getElementById('selHora').value;
-            const m = document.getElementById('selMin').value;
-            if(!nome) return;
-            
-            let obj = { name: nome, concluido: false };
-            if(currentTab !== 'notas' && data) {
-                obj.timestamp = new Date(data + "T" + h + ":" + m + ":00").getTime();
-            }
-            
-            push(agendaRef, obj);
-            document.getElementById('inpNome').value = '';
-        };
-
-        window.toggle = function(fId, status) { set(ref(db, 'agenda/' + fId + '/concluido'), !status); };
-        window.excluir = function(fId) { if(confirm("Apagar?")) remove(ref(db, 'agenda/' + fId)); };
-
-        const sh = document.getElementById('selHora');
-        const sm = document.getElementById('selMin');
-        for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
-        for(let i=0; i<60; i+=5) sm.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}m</option>`;
-        document.getElementById('inpData').value = new Date().toISOString().split('T')[0];
-    </script>
-</body>
-</html>
+        function renderNotas() {
