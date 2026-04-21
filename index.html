@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Premium</title>
+    <title>Agenda Fabiula - Sincronizada</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
         
-        /* STATUS */
-        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #8ab4f8; z-index: 2000; opacity: 0; pointer-events: none; }
+        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #8ab4f8; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
         .status-nuvem.show { opacity: 1; }
         
-        /* TABS */
         .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; }
         .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
         .tab.active { color: #8ab4f8; border-bottom: 3px solid #8ab4f8; }
@@ -21,28 +19,60 @@
         .dia-divisor { background: #222; padding: 10px 15px; margin: 15px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
         .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
         .item.done { opacity: 0.3; border-left-color: #555; }
-        .prox-pendente { border: 2px solid #8ab4f8 !important; box-shadow: 0 0 10px rgba(138, 180, 248, 0.4); }
+        .prox-pendente { border: 2px solid #8ab4f8 !important; box-shadow: 0 0 12px rgba(138, 180, 248, 0.5); }
 
-        /* GRADE SEMANAL IGUALITÁRIA (PC) */
-        .semana-corpo-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 5px; background: #121212; width: 100%; }
-        .coluna-dia { display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #222; min-height: 400px; padding: 5px; background: #181818; }
-        .task-card { font-size: 0.7rem; padding: 6px; border-radius: 4px; background: #3b78db; color: white; margin-bottom: 2px; border-left: 3px solid rgba(0,0,0,0.2); }
-        .task-card.concluida { background: #444; opacity: 0.5; }
+        /* VISUALIZAÇÃO SEMANAL - CORREÇÃO COMPUTADOR */
+        .semana-container { 
+            display: flex; 
+            width: 100%; 
+            padding: 5px; 
+            background: #121212;
+            min-height: 500px;
+        }
 
-        /* ABA DE NOTAS (IDEIAS) */
-        #listaNotas { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-        .nota-card { background: #2d2d2d; padding: 15px; border-radius: 10px; border-top: 3px solid #fbbc04; position: relative; }
-        .nota-card span { font-size: 0.9rem; color: #fff; }
+        .coluna-dia { 
+            flex: 1; /* Força cada coluna a ter o mesmo tamanho dividindo o total */
+            display: flex; 
+            flex-direction: column; 
+            gap: 5px; 
+            border-right: 1px solid #222; 
+            padding: 5px; 
+            background: #181818;
+            min-width: 0; /* Evita que a coluna "estoure" o tamanho do flex */
+        }
+
+        .coluna-dia:last-child { border-right: none; }
+
+        .col-header { 
+            text-align: center; 
+            padding: 10px 0; 
+            border-bottom: 1px solid #333; 
+            margin-bottom: 10px;
+        }
+        .col-header .dia-n { font-size: 1.2rem; display: block; font-weight: bold; }
+        .col-header .dia-s { font-size: 0.6rem; color: #777; text-transform: uppercase; }
+        .col-header.hoje { color: #8ab4f8; border-bottom: 2px solid #8ab4f8; }
+
+        .task-card { font-size: 0.75rem; padding: 6px; border-radius: 4px; background: #3b78db; color: white; margin-bottom: 3px; border-left: 3px solid rgba(0,0,0,0.3); line-height: 1.2; word-break: break-word; }
+        .task-card.done { background: #444; opacity: 0.5; text-decoration: line-through; }
+
+        /* NOTAS */
+        #listaNotas { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .nota-card { background: #2d2d2d; padding: 15px; border-radius: 10px; border-top: 4px solid #fbbc04; }
 
         /* FOOTER */
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
+        input, select { background: #2d2d2d; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 16px; outline: none; }
         .btn-main { background: #8ab4f8; color: #000; border: none; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
         
         .hidden { display: none !important; }
-        
-        @media (max-width: 600px) {
-            .semana-corpo-grid { grid-template-columns: 1fr; } /* No celular empilha */
-            .coluna-dia { border-right: none; border-bottom: 1px solid #333; }
+
+        /* AJUSTE PARA CELULAR (EMPILHAR) */
+        @media (max-width: 800px) {
+            .semana-container { flex-direction: column; }
+            .coluna-dia { border-right: none; border-bottom: 1px solid #222; width: 100%; min-height: auto; padding-bottom: 15px; }
+            .col-header { display: flex; align-items: center; gap: 10px; padding: 15px; text-align: left; }
+            .col-header .dia-n { font-size: 1rem; }
         }
     </style>
 </head>
@@ -59,25 +89,22 @@
     <div id="view-agenda"><div id="minhaLista"></div></div>
 
     <div id="view-semanal" class="hidden">
-        <div style="display:flex; justify-content: space-between; padding:10px; align-items:center;">
-            <button onclick="mudarSemana(-1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:5px 15px; border-radius:5px;">◀</button>
-            <span id="labelMes" style="font-weight:bold; color:#8ab4f8"></span>
-            <button onclick="mudarSemana(1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:5px 15px; border-radius:5px;">▶</button>
+        <div style="display:flex; justify-content: space-between; padding:10px; background:#1f1f1f; align-items:center;">
+            <button onclick="mudarSemana(-1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:5px 15px; border-radius:5px; cursor:pointer;">◀ ANTERIOR</button>
+            <span id="labelMes" style="font-weight:bold; color:#8ab4f8; text-transform:uppercase; font-size:0.9rem;"></span>
+            <button onclick="mudarSemana(1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:5px 15px; border-radius:5px; cursor:pointer;">PRÓXIMA ▶</button>
         </div>
-        <div id="headerDias" style="display:grid; grid-template-columns: repeat(7, 1fr); text-align:center; padding:10px 0; border-bottom:1px solid #333;"></div>
-        <div id="corpoSemana" class="semana-corpo-grid"></div>
+        <div id="corpoSemana" class="semana-container"></div>
     </div>
 
-    <div id="view-notas" class="hidden">
-        <div id="listaNotas"></div>
-    </div>
+    <div id="view-notas" class="hidden"><div id="listaNotas"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="background:#2d2d2d; border:1px solid #444; color:#fff; width:100%; padding:12px; border-radius:8px; margin-bottom:8px;" placeholder="Título da tarefa ou nota...">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="O que vai fazer?">
         <div id="controlesData" style="display:flex; gap:8px;">
-            <input type="date" id="inpData" style="background:#2d2d2d; border:1px solid #444; color:#fff; flex:2; padding:10px; border-radius:8px;">
-            <select id="selHora" style="background:#2d2d2d; border:1px solid #444; color:#fff; flex:1; padding:10px; border-radius:8px;"></select>
-            <select id="selMin" style="background:#2d2d2d; border:1px solid #444; color:#fff; flex:1; padding:10px; border-radius:8px;"></select>
+            <input type="date" id="inpData" style="flex:2">
+            <select id="selHora" style="flex:1"></select>
+            <select id="selMin" style="flex:1"></select>
         </div>
         <button class="btn-main" onclick="adicionar()">SALVAR NA NUVEM</button>
     </div>
@@ -115,8 +142,7 @@
                     window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
                     document.getElementById('status').classList.add('show');
                     setTimeout(() => document.getElementById('status').classList.remove('show'), 2000);
-                    renderizar();
-                    if(currentTab === 'agenda') focarProximaTarefa();
+                    renderizarTudo();
                 });
             }
         });
@@ -127,13 +153,12 @@
             document.getElementById('btn-' + tab).classList.add('active');
             ['view-agenda', 'view-semanal', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById('view-' + tab).classList.remove('hidden');
-            
-            // Se mudar para Notas, esconde os campos de data/hora
             document.getElementById('controlesData').style.display = (tab === 'notas') ? 'none' : 'flex';
-            renderizar();
+            renderizarTudo();
+            if(tab === 'agenda') setTimeout(focarProxima, 300);
         };
 
-        function renderizar() {
+        function renderizarTudo() {
             renderLista();
             renderSemana();
             renderNotas();
@@ -142,11 +167,10 @@
         function renderLista() {
             const lista = document.getElementById('minhaLista');
             window.agenda.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-            const tarefasComData = window.agenda.filter(it => it.timestamp);
             lista.innerHTML = '';
             let ultimoDia = "";
 
-            tarefasComData.forEach((item) => {
+            window.agenda.filter(it => it.timestamp).forEach((item) => {
                 const dt = new Date(item.timestamp);
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
                 if(diaLabel !== ultimoDia) {
@@ -165,14 +189,14 @@
                         <span style="font-size:0.75rem; color:#aaa">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
                     </div>
                     <div style="display:flex; gap:15px; align-items:center;">
-                        <span onclick="excluir('${item.firebaseId}')">🗑️</span>
+                        <span onclick="excluir('${item.firebaseId}')" style="cursor:pointer">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggle('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>`;
                 lista.appendChild(itemDiv);
             });
         }
 
-        function focarProximaTarefa() {
+        function focarProxima() {
             const agora = Date.now();
             const proxima = window.agenda.find(it => !it.concluido && it.timestamp >= agora);
             if(proxima) {
@@ -185,25 +209,32 @@
         }
 
         function renderSemana() {
-            const header = document.getElementById('headerDias');
             const corpo = document.getElementById('corpoSemana');
             const start = new Date(dataRefSemana);
             start.setDate(start.getDate() - start.getDay());
-            document.getElementById('labelMes').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).toUpperCase();
+            document.getElementById('labelMes').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
-            header.innerHTML = ''; corpo.innerHTML = '';
+            corpo.innerHTML = '';
             const nomes = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
             for (let i = 0; i < 7; i++) {
                 let dia = new Date(start);
                 dia.setDate(dia.getDate() + i);
                 let diaStr = dia.toLocaleDateString('pt-BR');
-                header.innerHTML += `<div><div style="font-size:0.6rem; color:#777;">${nomes[i]}</div><div style="font-size:1.2rem; color:${diaStr === new Date().toLocaleDateString('pt-BR') ? '#8ab4f8':'#fff'}">${dia.getDate()}</div></div>`;
                 
                 const col = document.createElement('div');
                 col.className = 'coluna-dia';
-                window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr).forEach(it => {
-                    col.innerHTML += `<div class="task-card ${it.concluido?'concluida':''}"> ${it.name}</div>`;
+                
+                const isHoje = diaStr === new Date().toLocaleDateString('pt-BR');
+                col.innerHTML = `<div class="col-header ${isHoje?'hoje':''}">
+                    <span class="dia-s">${nomes[i]}</span>
+                    <span class="dia-n">${dia.getDate()}</span>
+                </div>`;
+                
+                const colTasks = window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr);
+                colTasks.forEach(it => {
+                    const h = new Date(it.timestamp).getHours().toString().padStart(2, '0');
+                    col.innerHTML += `<div class="task-card ${it.concluido?'done':''}"><b>${h}h</b> ${it.name}</div>`;
                 });
                 corpo.appendChild(col);
             }
@@ -211,12 +242,12 @@
 
         function renderNotas() {
             const container = document.getElementById('listaNotas');
-            const notas = window.agenda.filter(it => !it.timestamp);
             container.innerHTML = '';
-            notas.forEach(nota => {
+            window.agenda.filter(it => !it.timestamp).forEach(nota => {
                 const div = document.createElement('div');
                 div.className = 'nota-card';
-                div.innerHTML = `<span>${nota.name}</span><br><span onclick="excluir('${nota.firebaseId}')" style="font-size:0.7rem; color:#f44; cursor:pointer; margin-top:10px; display:inline-block">EXCLUIR</span>`;
+                div.innerHTML = `<span style="font-size:0.9rem;">${nota.name}</span><br>
+                <span onclick="excluir('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer; margin-top:10px; display:inline-block">REMOVER NOTA</span>`;
                 container.appendChild(div);
             });
         }
@@ -229,12 +260,8 @@
             const h = document.getElementById('selHora').value;
             const m = document.getElementById('selMin').value;
             if(!nome) return;
-            
             let obj = { name: nome, concluido: false };
-            if(currentTab !== 'notas' && data) {
-                obj.timestamp = new Date(data + "T" + h + ":" + m + ":00").getTime();
-            }
-            
+            if(currentTab !== 'notas' && data) obj.timestamp = new Date(data + "T" + h + ":" + m + ":00").getTime();
             push(agendaRef, obj);
             document.getElementById('inpNome').value = '';
         };
@@ -242,6 +269,7 @@
         window.toggle = function(fId, status) { set(ref(db, 'agenda/' + fId + '/concluido'), !status); };
         window.excluir = function(fId) { if(confirm("Apagar permanentemente?")) remove(ref(db, 'agenda/' + fId)); };
 
+        // Setup inicial
         const sh = document.getElementById('selHora');
         const sm = document.getElementById('selMin');
         for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
