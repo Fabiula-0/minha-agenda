@@ -3,77 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Grade Semanal</title>
+    <title>Agenda Fabiula - Calendar Style</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 320px; color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; margin: 0; padding-bottom: 320px; color: #e0e0e0; }
         
-        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 2000; font-weight: bold; transition: opacity 0.5s; opacity: 0; }
+        .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #fff; z-index: 2000; transition: opacity 0.5s; opacity: 0; }
         .status-nuvem.show { opacity: 1; }
         
-        .tabs { display: flex; background: #fff; border-bottom: 2px solid #ddd; position: sticky; top: 0; z-index: 900; }
-        .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #666; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
-        .tab.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: #f8fafc; }
+        .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; }
+        .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
+        .tab.active { color: #8ab4f8; border-bottom: 3px solid #8ab4f8; }
 
-        /* MODO GRADE SEMANAL (PC) */
-        .semana-grid { 
-            display: flex; 
-            flex-direction: row; /* Força colunas lado a lado */
-            gap: 10px; 
-            padding: 15px; 
-            overflow-x: auto; /* Permite rolar pro lado se a tela for pequena */
-            align-items: flex-start;
-            background: #f0f2f5;
+        /* HEADER DA SEMANA (Igual à imagem) */
+        .semana-header-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            background: #121212; 
+            text-align: center; 
+            padding: 10px 5px;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 50px;
+            z-index: 800;
         }
+        .dia-nome { font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-bottom: 5px; }
+        .dia-numero { font-size: 1.4rem; width: 40px; height: 40px; line-height: 40px; margin: 0 auto; border-radius: 50%; transition: 0.3s; }
+        .dia-numero.hoje { background: #8ab4f8; color: #000; font-weight: bold; }
 
+        /* GRID DE TAREFAS */
+        .semana-corpo-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 4px; 
+            padding: 5px;
+            min-height: 400px;
+            background: #121212;
+        }
         .coluna-dia { 
-            min-width: 180px; /* Largura de cada coluna */
-            flex: 1; 
-            background: #e2e8f0; 
-            border-radius: 10px; 
             display: flex; 
             flex-direction: column; 
-            border: 1px solid #cbd5e1;
-            min-height: 300px;
+            gap: 4px; 
+            border-right: 1px solid #222;
+            min-height: 100%;
         }
 
-        .coluna-header { 
-            padding: 12px; 
-            font-weight: bold; 
-            font-size: 0.8rem; 
-            text-align: center; 
-            background: #fff; 
-            border-radius: 10px 10px 0 0; 
-            border-bottom: 2px solid #cbd5e1;
-            text-transform: uppercase;
+        /* CARD ESTILO GOOGLE CALENDAR */
+        .task-card { 
+            font-size: 0.75rem; 
+            padding: 6px 8px; 
+            border-radius: 4px; 
+            background: #4285f4; /* Azul padrão */
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-left: 3px solid rgba(0,0,0,0.2);
+            margin: 1px 2px;
         }
-        .coluna-header.hoje { background: #2563eb; color: white; border-bottom-color: #1e40af; }
+        .task-card.meta { background: #e67c73; } /* Estilo para tarefas de meta/aniversário */
+        .task-card.concluida { opacity: 0.4; background: #555 !important; text-decoration: line-through; }
 
-        .list-semana { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
-        
-        .card-semana { 
-            background: white; 
-            padding: 10px; 
-            border-radius: 6px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            border-left: 4px solid #2563eb;
-            font-size: 0.85rem;
-        }
-        .card-semana.done { opacity: 0.5; border-left-color: #94a3b8; }
+        /* AGENDA DIÁRIA (Lista) */
+        .dia-divisor { background: #333; padding: 10px 15px; margin: 15px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; }
+        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
+        .item.done { opacity: 0.4; border-left-color: #555; }
 
-        /* Estilos Agenda Diária */
-        .dia-divisor { background: #e2e8f0; padding: 10px 15px; margin: 15px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; color: #475569; border-radius: 6px; }
-        .dia-divisor.hoje { background: #2563eb; color: white; }
-        .item { background: white; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 6px solid #2563eb; }
-        .item.done { border-left-color: #94a3b8; opacity: 0.5; }
-
-        .semana-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: white; margin: 10px; border-radius: 10px; }
-
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #ddd; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; margin-bottom: 8px; }
-        .btn-main { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; }
+        input, select { background: #2d2d2d; border: 1px solid #444; color: white; width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 16px; }
+        .btn-main { background: #8ab4f8; color: #000; border: none; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
         
         .hidden { display: none !important; }
+        .semana-nav { display: flex; justify-content: space-between; padding: 10px; background: #121212; }
+        .semana-nav button { background: none; border: 1px solid #444; color: #8ab4f8; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -81,9 +83,9 @@
     <div id="status" class="status-nuvem">Sincronizado ✅</div>
 
     <div class="tabs">
-        <button id="btn-agenda" class="tab active" onclick="switchTab('agenda')">📅 Agenda</button>
-        <button id="btn-semanal" class="tab" onclick="switchTab('semanal')">🗓️ Semanal</button>
-        <button id="btn-projetos" class="tab" onclick="switchTab('projetos')">🏗️ Projetos</button>
+        <button id="btn-agenda" class="tab active" onclick="switchTab('agenda')">📅 LISTA</button>
+        <button id="btn-semanal" class="tab" onclick="switchTab('semanal')">🗓️ SEMANA</button>
+        <button id="btn-projetos" class="tab" onclick="switchTab('projetos')">🏗️ PROJETOS</button>
     </div>
 
     <div id="view-agenda">
@@ -92,14 +94,16 @@
 
     <div id="view-semanal" class="hidden">
         <div class="semana-nav">
-            <button onclick="mudarSemana(-1)">◀ Anterior</button>
-            <span id="labelSemana" style="font-weight:bold;">Mês</span>
-            <button onclick="mudarSemana(1)">Próxima ▶</button>
+            <button onclick="mudarSemana(-1)">◀ ANTERIOR</button>
+            <span id="labelMes" style="font-weight:bold; color:#8ab4f8"></span>
+            <button onclick="mudarSemana(1)">PRÓXIMA ▶</button>
         </div>
-        <div id="gradeSemanal" class="semana-grid"></div>
+        
+        <div id="headerDias" class="semana-header-grid"></div>
+        <div id="corpoSemana" class="semana-corpo-grid"></div>
     </div>
 
-    <div id="view-projetos" class="hidden"><div style="padding:20px; text-align:center; color:#666;">Aba de Projetos</div></div>
+    <div id="view-projetos" class="hidden"><div style="padding:40px; text-align:center; color:#666;">Painel de Projetos</div></div>
 
     <div class="footer">
         <input type="text" id="inpNome" placeholder="O que vai fazer?">
@@ -108,7 +112,7 @@
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
         </div>
-        <button class="btn-main" onclick="adicionar()">AGENDAR</button>
+        <button class="btn-main" onclick="adicionar()">AGENDAR TAREFA</button>
     </div>
 
     <script type="module">
@@ -142,8 +146,6 @@
                 onValue(agendaRef, (snapshot) => {
                     const data = snapshot.val();
                     window.agenda = data ? Object.entries(data).map(([id, val]) => ({...val, firebaseId: id})) : [];
-                    document.getElementById('status').classList.add('show');
-                    setTimeout(() => document.getElementById('status').classList.remove('show'), 2000);
                     renderizar();
                 });
             }
@@ -159,11 +161,11 @@
         };
 
         function renderizar() {
-            if (currentTab === 'agenda') renderAgenda();
-            if (currentTab === 'semanal') renderGrade();
+            if (currentTab === 'agenda') renderLista();
+            if (currentTab === 'semanal') renderSemanaEstiloGoogle();
         }
 
-        function renderAgenda() {
+        function renderLista() {
             const lista = document.getElementById('minhaLista');
             const hoje = new Date().toLocaleDateString('pt-BR');
             window.agenda.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
@@ -175,7 +177,7 @@
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
                 if(diaLabel !== ultimoDia) {
                     const div = document.createElement('div');
-                    div.className = `dia-divisor ${dt.toLocaleDateString('pt-BR') === hoje ? 'hoje' : ''}`;
+                    div.className = 'dia-divisor';
                     div.innerText = diaLabel;
                     lista.appendChild(div);
                     ultimoDia = diaLabel;
@@ -185,61 +187,68 @@
                 itemDiv.innerHTML = `
                     <div class="info">
                         <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                        <span class="time-label">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
+                        <span class="time-label" style="color:#aaa">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</span>
                     </div>
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <span style="cursor:pointer" onclick="excluir('${item.firebaseId}')">🗑️</span>
-                        <div class="check-btn" style="width:30px;height:30px;border:2px solid #ddd;border-radius:5px;display:flex;align-items:center;justify-content:center;background:${item.concluido?'#059669':'#fff'};color:${item.concluido?'#fff':'#ccc'};cursor:pointer" onclick="toggle('${item.firebaseId}', ${item.concluido})">✓</div>
+                    <div style="display:flex; gap:15px;">
+                        <span onclick="excluir('${item.firebaseId}')">🗑️</span>
+                        <span onclick="toggle('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>`;
                 lista.appendChild(itemDiv);
             });
         }
 
-        function renderGrade() {
-            const grade = document.getElementById('gradeSemanal');
-            const hoje = new Date().toLocaleDateString('pt-BR');
+        function renderSemanaEstiloGoogle() {
+            const header = document.getElementById('headerDias');
+            const corpo = document.getElementById('corpoSemana');
+            const hojeData = new Date();
+            const hojeStr = hojeData.toLocaleDateString('pt-BR');
+
             const start = new Date(dataRefSemana);
-            // Ajusta para começar na Segunda-feira
-            const day = start.getDay();
-            const diff = start.getDate() - day + (day === 0 ? -6 : 1);
-            start.setDate(diff);
+            start.setDate(start.getDate() - start.getDay()); // Começa no Domingo
 
-            document.getElementById('labelSemana').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-            grade.innerHTML = '';
+            document.getElementById('labelMes').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).toUpperCase();
+            
+            header.innerHTML = '';
+            corpo.innerHTML = '';
 
-            for (let i=0; i<7; i++) {
+            const nomesDias = ['DOM.', 'SEG.', 'TER.', 'QUA.', 'QUI.', 'SEX.', 'SÁB.'];
+
+            for (let i = 0; i < 7; i++) {
                 let dia = new Date(start);
                 dia.setDate(dia.getDate() + i);
                 let diaStr = dia.toLocaleDateString('pt-BR');
-                
+
+                // Cabeçalho
+                const isHoje = diaStr === hojeStr;
+                header.innerHTML += `
+                    <div>
+                        <div class="dia-nome">${nomesDias[i]}</div>
+                        <div class="dia-numero ${isHoje ? 'hoje' : ''}">${dia.getDate()}</div>
+                    </div>`;
+
+                // Coluna de tarefas
                 const col = document.createElement('div');
                 col.className = 'coluna-dia';
                 
-                const isHoje = diaStr === hoje;
-                col.innerHTML = `<div class="coluna-header ${isHoje?'hoje':''}">${dia.toLocaleDateString('pt-BR', {weekday:'short', day:'numeric'})}</div>`;
-                
-                const list = document.createElement('div');
-                list.className = 'list-semana';
-                
                 const tasks = window.agenda.filter(it => new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr);
                 
-                if(tasks.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; color:#999; font-size:0.7rem; margin-top:10px;">Livre</div>';
-                } else {
-                    tasks.forEach(it => {
-                        const h = new Date(it.timestamp).getHours().toString().padStart(2, '0');
-                        const m = new Date(it.timestamp).getMinutes().toString().padStart(2, '0');
-                        list.innerHTML += `<div class="card-semana ${it.concluido?'done':''}">${h}:${m} - ${it.name}</div>`;
-                    });
-                }
-                col.appendChild(list);
-                grade.appendChild(col);
+                tasks.forEach(it => {
+                    const h = new Date(it.timestamp).getHours().toString().padStart(2, '0');
+                    const tipoClasse = it.name.toLowerCase().includes('meta') ? 'meta' : '';
+                    const concluidaClasse = it.concluido ? 'concluida' : '';
+                    
+                    col.innerHTML += `
+                        <div class="task-card ${tipoClasse} ${concluidaClasse}">
+                            ${h}h - ${it.name}
+                        </div>`;
+                });
+                corpo.appendChild(col);
             }
         }
 
         window.mudarSemana = function(dir) {
             dataRefSemana.setDate(dataRefSemana.getDate() + (dir * 7));
-            renderGrade();
+            renderSemanaEstiloGoogle();
         };
 
         window.adicionar = function() {
@@ -251,6 +260,7 @@
             let ts = data ? new Date(data + "T" + h + ":" + m + ":00").getTime() : Date.now();
             push(agendaRef, { name: nome, timestamp: ts, concluido: false });
             document.getElementById('inpNome').value = '';
+            renderizar();
         };
 
         window.toggle = function(fId, status) { set(ref(db, 'agenda/' + fId + '/concluido'), !status); };
