@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - Fluxo Dinâmico</title>
+    <title>Agenda Fabiula - v15</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -16,29 +16,30 @@
         .tab.active { color: #8ab4f8; border-bottom: 3px solid #8ab4f8; background: #252525; }
 
         .hidden { display: none !important; }
-        .riscado { text-decoration: line-through !important; color: #666 !important; }
+        .riscado { text-decoration: line-through !important; color: #555 !important; }
         
-        /* LISTA E SEMANA */
+        /* ESTILO CONCLUÍDO - BEM ESCURO PARA O PC */
+        .done-global { opacity: 0.25 !important; background: #1a1a1a !important; border-left-color: #333 !important; color: #444 !important; }
+
+        /* LISTA DIÁRIA */
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
-        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
+        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; transition: all 0.3s; }
+
+        /* SEMANA */
         .semana-container { display: flex; width: 100%; padding: 5px; background: #121212; justify-content: space-between; }
-        .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; overflow: hidden; }
+        .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; }
         .col-header { padding: 8px; text-align: center; border-bottom: 1px solid #333; background: #222; }
         .col-header.hoje { background: #2563eb; color: #fff; }
-        .task-card { font-size: 0.7rem; padding: 5px; margin: 2px; border-radius: 3px; background: #3b78db; color: #fff; display: flex; align-items: center; justify-content: space-between; border-left: 2px solid rgba(0,0,0,0.3); }
+        .task-card { font-size: 0.7rem; padding: 6px; margin: 2px; border-radius: 4px; background: #3b78db; color: #fff; display: flex; align-items: center; justify-content: space-between; border-left: 3px solid rgba(0,0,0,0.3); transition: all 0.3s; }
+        .mini-check { cursor: pointer; margin-left: 5px; font-size: 0.9rem; }
 
-        /* PROJETOS - FLUXO DINÂMICO */
+        /* PROJETOS */
         .projeto-card { background: #1f1f1f; margin: 15px; padding: 20px; border-radius: 12px; border-top: 6px solid #8b5cf6; }
         .pergunta-box { background: #252525; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #333; }
         .inp-pergunta { width: 100%; background: #121212; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
         .btn-fluxo { padding: 10px 20px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; margin-right: 5px; }
         .btn-sim { background: #059669; color: white; }
         .btn-nao { background: #dc2626; color: white; }
-        
-        .historico-lista { margin-top: 15px; background: #181818; padding: 10px; border-radius: 8px; font-size: 0.8rem; }
-        .historico-item { border-bottom: 1px solid #333; padding: 8px 0; }
-        .badge-nao { color: #f87171; font-weight: bold; }
-        .badge-sim { color: #34d399; font-weight: bold; }
 
         /* FOOTER */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; }
@@ -71,16 +72,11 @@
         </div>
         <div id="corpoSemana" class="semana-container"></div>
     </div>
-
-    <div id="view-projetos" class="hidden">
-        <div style="padding: 15px;"><button class="btn-main" style="background:#8b5cf6; color:white;" onclick="novoProjeto()">+ Iniciar Novo Projeto</button></div>
-        <div id="listaProjetos"></div>
-    </div>
-
+    <div id="view-projetos" class="hidden"><div id="listaProjetos"></div></div>
     <div id="view-notas" class="hidden"><div id="listaNotas"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Tarefa ou Nota...">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Título...">
         <div id="controlesData" style="display:flex; gap:8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
@@ -121,97 +117,32 @@
                     const val = snap.val();
                     window.agenda = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderizarTudo();
+                    if(currentTab === 'agenda') setTimeout(focarProxima, 1000);
                 });
                 onValue(ref(db, 'projetos'), (snap) => {
                     const val = snap.val();
                     window.projetos = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
-                    document.getElementById('status').classList.add('show');
-                    setTimeout(() => document.getElementById('status').classList.remove('show'), 2000);
                     renderizarTudo();
                 });
             }
         });
 
-        window.renderProjetos = function() {
-            const container = document.getElementById('listaProjetos');
-            container.innerHTML = '';
-            
-            window.projetos.forEach(proj => {
-                let historicoHTML = (proj.historico || []).map(h => `
-                    <div class="historico-item">
-                        <b>Q:</b> ${h.q} | <span class="${h.a === 'SIM' ? 'badge-sim' : 'badge-nao'}">${h.a}</span>
-                    </div>
-                `).join('');
+        function focarProxima() {
+            const agora = Date.now();
+            // Acha a primeira tarefa não concluída que ainda vai acontecer ou que passou faz pouco tempo
+            const proxima = window.agenda
+                .filter(it => it.timestamp && !it.concluido)
+                .sort((a,b) => a.timestamp - b.timestamp)
+                .find(it => it.timestamp > (agora - 3600000)); // Considera até 1h atrás
 
-                container.innerHTML += `
-                    <div class="projeto-card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <strong style="font-size:1.2rem; color:#8ab4f8;">${proj.nome}</strong>
-                            <span onclick="excluirProjeto('${proj.firebaseId}')" style="color:#f44; cursor:pointer; font-size:0.8rem;">Excluir</span>
-                        </div>
-                        
-                        <div class="pergunta-box">
-                            <input type="text" id="inpQ-${proj.firebaseId}" class="inp-pergunta" placeholder="Qual a próxima pergunta?">
-                            <div style="display:flex;">
-                                <button class="btn-fluxo btn-sim" onclick="processarFluxo('${proj.firebaseId}', 'SIM')">SIM</button>
-                                <button class="btn-fluxo btn-nao" onclick="processarFluxo('${proj.firebaseId}', 'NÃO')">NÃO</button>
-                            </div>
-                        </div>
-
-                        <button onclick="toggleHist('${proj.firebaseId}')" style="margin-top:10px; background:none; border:none; color:#8ab4f8; cursor:pointer; font-size:0.75rem;">Ver Fluxo Completo ▼</button>
-                        <div id="hist-${proj.firebaseId}" class="historico-lista hidden">${historicoHTML || 'Nenhum passo registrado ainda.'}</div>
-                    </div>
-                `;
-            });
-        };
-
-        window.processarFluxo = function(pId, resposta) {
-            const inp = document.getElementById(`inpQ-${pId}`);
-            const pergunta = inp.value;
-            if(!pergunta) return alert("Escreva a pergunta primeiro!");
-
-            const proj = window.projetos.find(p => p.firebaseId === pId);
-            if(!proj.historico) proj.historico = [];
-
-            proj.historico.push({ q: pergunta, a: resposta, data: new Date().toLocaleString() });
-
-            if(resposta === 'NÃO') {
-                const dataAgenda = prompt(`Agendar pendência: "${pergunta}" para quando?`, new Date().toISOString().split('T')[0]);
-                if(dataAgenda) {
-                    push(ref(db, 'agenda'), {
-                        name: `[${proj.nome}] ${pergunta}`,
-                        timestamp: new Date(dataAgenda + "T09:00:00").getTime(),
-                        concluido: false
-                    });
-                    alert("Tarefa adicionada à sua LISTA!");
+            if(proxima) {
+                const el = document.getElementById("task-" + proxima.firebaseId);
+                if(el) {
+                    const top = el.getBoundingClientRect().top + window.pageYOffset - 150;
+                    window.scrollTo({ top: top, behavior: 'smooth' });
                 }
             }
-
-            set(ref(db, 'projetos/' + pId), proj);
-            inp.value = '';
-        };
-
-        window.toggleHist = function(pId) {
-            document.getElementById(`hist-${pId}`).classList.toggle('hidden');
-        };
-
-        window.novoProjeto = function() {
-            const nome = prompt("Nome do Cliente ou Obra:");
-            if(nome) push(ref(db, 'projetos'), { nome: nome, historico: [], dataCriacao: Date.now() });
-        };
-
-        // Funções de apoio
-        window.switchTab = function(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('btn-' + tab).classList.add('active');
-            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById('view-' + tab).classList.remove('hidden');
-            document.getElementById('controlesData').style.display = (tab === 'notas' || tab === 'projetos') ? 'none' : 'flex';
-            renderizarTudo();
-        };
-
-        function renderizarTudo() { renderLista(); renderSemana(); renderProjetos(); renderNotas(); }
+        }
 
         function renderLista() {
             const lista = document.getElementById('minhaLista');
@@ -221,9 +152,12 @@
             window.agenda.filter(it => it.timestamp).forEach((item) => {
                 const dt = new Date(item.timestamp);
                 const diaLabel = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'});
-                if(diaLabel !== ultimoDia) { lista.innerHTML += `<div class="dia-divisor">${diaLabel}</div>`; ultimoDia = diaLabel; }
-                lista.innerHTML += `<div class="item ${item.concluido?'done-global':''}">
-                    <div><span class="${item.concluido?'riscado':''}">${item.name}</span><br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small></div>
+                if(diaLabel !== ultimoDia) {
+                    lista.innerHTML += `<div class="dia-divisor">${diaLabel}</div>`;
+                    ultimoDia = diaLabel;
+                }
+                lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido ? 'done-global' : ''}">
+                    <div><span class="${item.concluido ? 'riscado' : ''}">${item.name}</span><br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small></div>
                     <div style="display:flex; gap:15px; align-items:center;">
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
@@ -247,28 +181,78 @@
                     <span style="font-size:1.2rem; font-weight:bold;">${dia.getDate()}</span>
                 </div>`;
                 window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString() === dia.toLocaleDateString()).forEach(it => {
-                    col.innerHTML += `<div class="task-card ${it.concluido?'done-global':''}"><b>${new Date(it.timestamp).getHours()}h</b> <span class="${it.concluido?'riscado':''}">${it.name}</span></div>`;
+                    col.innerHTML += `
+                    <div class="task-card ${it.concluido ? 'done-global' : ''}">
+                        <span class="${it.concluido ? 'riscado' : ''}"><b>${new Date(it.timestamp).getHours()}h</b> ${it.name}</span>
+                        <span class="mini-check" onclick="toggleTarefa('${it.firebaseId}', ${it.concluido})">${it.concluido ? '✅' : '⬜'}</span>
+                    </div>`;
                 });
                 corpo.appendChild(col);
             }
         }
 
-        function renderNotas() {
-            const container = document.getElementById('listaNotas');
-            container.innerHTML = '';
-            window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                container.innerHTML += `<div class="nota-card"><span>${nota.name}</span><br><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer; margin-top:10px; display:inline-block;">[ REMOVER ]</span></div>`;
-            });
-        }
+        // --- Restante das funções (SwitchTab, Projetos, etc) ---
+        window.renderizarTudo = function() { renderLista(); renderSemana(); renderProjetos(); renderNotas(); };
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('btn-' + tab).classList.add('active');
+            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            if(tab === 'agenda') setTimeout(focarProxima, 500);
+            renderizarTudo();
+        };
 
         window.toggleTarefa = function(fId, s) { set(ref(db, `agenda/${fId}/concluido`), !s); };
         window.excluirTarefa = function(fId) { if(confirm("Excluir?")) remove(ref(db, `agenda/${fId}`)); };
-        window.excluirProjeto = function(fId) { if(confirm("Excluir projeto?")) remove(ref(db, `projetos/${fId}`)); };
         window.mudarSemana = function(dir) { dataRefSemana.setDate(dataRefSemana.getDate() + (dir * 7)); renderSemana(); };
+
+        window.renderProjetos = function() {
+            const container = document.getElementById('listaProjetos');
+            container.innerHTML = '<div style="padding: 15px;"><button class="btn-main" style="background:#8b5cf6; color:white;" onclick="novoProjeto()">+ Iniciar Novo Projeto</button></div>';
+            window.projetos.forEach(proj => {
+                let histHTML = (proj.historico || []).map(h => `<div style="font-size:0.7rem; border-bottom:1px solid #333; padding:5px;"><b>${h.q}</b>: ${h.a}</div>`).join('');
+                container.innerHTML += `<div class="projeto-card">
+                    <div style="display:flex; justify-content:space-between;"><strong>${proj.nome}</strong><span onclick="excluirProjeto('${proj.firebaseId}')" style="color:#f44; cursor:pointer;">Excluir</span></div>
+                    <div class="pergunta-box">
+                        <input type="text" id="inpQ-${proj.firebaseId}" class="inp-pergunta" placeholder="Próxima pergunta...">
+                        <button class="btn-fluxo btn-sim" onclick="processarFluxo('${proj.firebaseId}', 'SIM')">SIM</button>
+                        <button class="btn-fluxo btn-nao" onclick="processarFluxo('${proj.firebaseId}', 'NÃO')">NÃO</button>
+                    </div>
+                    <details style="margin-top:10px; font-size:0.8rem;"><summary style="cursor:pointer; color:#8ab4f8;">Ver Fluxo Completo</summary>${histHTML}</details>
+                </div>`;
+            });
+        };
+
+        window.processarFluxo = function(pId, resposta) {
+            const q = document.getElementById(`inpQ-${pId}`).value; if(!q) return;
+            const proj = window.projetos.find(p => p.firebaseId === pId);
+            if(!proj.historico) proj.historico = [];
+            proj.historico.push({ q: q, a: resposta });
+            if(resposta === 'NÃO') {
+                const data = prompt("Agendar para quando?", new Date().toISOString().split('T')[0]);
+                if(data) push(ref(db, 'agenda'), { name: `[${proj.nome}] ${q}`, timestamp: new Date(data + "T09:00:00").getTime(), concluido: false });
+            }
+            set(ref(db, 'projetos/' + pId), proj);
+        };
+
+        window.novoProjeto = function() { const n = prompt("Nome do Projeto:"); if(n) push(ref(db, 'projetos'), { nome: n, historico: [], checkpoint: 'inicio' }); };
+        window.excluirProjeto = function(fId) { if(confirm("Excluir projeto?")) remove(ref(db, `projetos/${fId}`)); };
+
+        window.renderNotas = function() {
+            const container = document.getElementById('listaNotas'); container.innerHTML = '';
+            window.agenda.filter(it => !it.timestamp).forEach(nota => {
+                container.innerHTML += `<div class="nota-card"><span>${nota.name}</span><br><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer;">[ REMOVER ]</span></div>`;
+            });
+        };
+
         window.adicionar = function() {
             const nome = document.getElementById('inpNome').value; if(!nome) return;
             let obj = { name: nome, concluido: false };
-            if(currentTab !== 'notas' && currentTab !== 'projetos' && document.getElementById('inpData').value) obj.timestamp = new Date(document.getElementById('inpData').value + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime();
+            if(currentTab === 'agenda' || currentTab === 'semanal') {
+                const dt = document.getElementById('inpData').value;
+                if(dt) obj.timestamp = new Date(dt + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime();
+            }
             push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = '';
         };
 
