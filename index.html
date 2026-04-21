@@ -3,42 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v6</title>
+    <title>Agenda Fabiula - Colunas Fixas</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
         
-        /* STATUS */
         .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #8ab4f8; z-index: 2000; opacity: 0; transition: opacity 0.5s; }
         .status-nuvem.show { opacity: 1; }
         
-        /* TABS */
         .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; }
         .tab { flex: 1; padding: 15px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.9rem; }
         .tab.active { color: #8ab4f8; border-bottom: 3px solid #8ab4f8; background: #252525; }
 
-        /* LISTA */
+        /* LISTA PRINCIPAL */
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
         .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
         .item.done { opacity: 0.3; border-left-color: #555; }
         .prox-pendente { border: 2px solid #8ab4f8 !important; box-shadow: 0 0 15px rgba(138, 180, 248, 0.6); }
 
-        /* SEMANA - 5 COLUNAS NO PC */
+        /* ESTRUTURA SEMANAL - DIVISÃO IGUAL PELA TELA */
         .semana-container { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); /* 5 colunas por linha no PC */
-            gap: 10px; 
-            padding: 10px; 
+            display: flex; 
+            width: 100%; 
+            padding: 5px; 
             background: #121212; 
+            justify-content: space-between;
         }
-        .coluna-dia { background: #181818; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; min-height: 200px; padding-bottom: 10px; }
-        .col-header { padding: 10px; text-align: center; border-bottom: 1px solid #333; margin-bottom: 8px; }
-        .col-header.hoje { background: #2563eb; color: #fff; border-radius: 8px 8px 0 0; }
-        .task-card { font-size: 0.75rem; padding: 6px; margin: 2px 8px; border-radius: 4px; background: #3b78db; color: #fff; border-left: 3px solid rgba(0,0,0,0.3); }
+
+        .coluna-dia { 
+            width: 14%; /* 100% dividido por 7 dias */
+            background: #181818; 
+            border: 1px solid #252525;
+            display: flex; 
+            flex-direction: column; 
+            min-height: 450px; 
+            overflow: hidden; /* Corta o que sobrar */
+        }
+
+        .col-header { 
+            padding: 8px; 
+            text-align: center; 
+            border-bottom: 1px solid #333; 
+            background: #222;
+        }
+        .col-header.hoje { background: #2563eb; color: #fff; }
+
+        .task-card { 
+            font-size: 0.7rem; 
+            padding: 5px; 
+            margin: 2px; 
+            border-radius: 3px; 
+            background: #3b78db; 
+            color: #fff; 
+            white-space: nowrap; /* Não pula linha */
+            overflow: hidden; /* Corta o texto */
+            text-overflow: ellipsis; /* Coloca os ... */
+            border-left: 2px solid rgba(0,0,0,0.3);
+        }
+        .task-card.done { background: #444; opacity: 0.5; text-decoration: line-through; }
 
         /* NOTAS */
         #listaNotas { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        .nota-card { background: #2d2d2d; padding: 15px; border-radius: 10px; border-top: 4px solid #fbbc04; color: #fff; line-height: 1.4; }
+        .nota-card { background: #2d2d2d; padding: 15px; border-radius: 10px; border-top: 4px solid #fbbc04; }
 
         /* FOOTER */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; }
@@ -47,8 +73,11 @@
         
         .hidden { display: none !important; }
 
+        /* Ajuste Celular: No celular não dá pra ser 14%, então ele vira lista */
         @media (max-width: 900px) {
-            .semana-container { grid-template-columns: 1fr; } /* No celular vira lista única */
+            .semana-container { flex-direction: column; }
+            .coluna-dia { width: 100%; min-height: auto; margin-bottom: 10px; border: none; border-bottom: 1px solid #333; }
+            .task-card { white-space: normal; } /* No celular pode ler tudo */
         }
     </style>
 </head>
@@ -65,10 +94,10 @@
     <div id="view-agenda"><div id="minhaLista"></div></div>
     
     <div id="view-semanal" class="hidden">
-        <div style="display:flex; justify-content: space-between; padding:15px; background:#1f1f1f; align-items:center;">
-            <button onclick="mudarSemana(-1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:8px 20px; border-radius:8px; cursor:pointer;">◀ ANTERIOR</button>
-            <span id="labelMes" style="font-weight:bold; color:#8ab4f8; text-transform:uppercase;"></span>
-            <button onclick="mudarSemana(1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:8px 20px; border-radius:8px; cursor:pointer;">PRÓXIMA ▶</button>
+        <div style="display:flex; justify-content: space-between; padding:10px; background:#1f1f1f; align-items:center;">
+            <button onclick="mudarSemana(-1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:5px 15px; border-radius:8px; cursor:pointer;">◀</button>
+            <span id="labelMes" style="font-weight:bold; color:#8ab4f8; text-transform:uppercase; font-size:0.8rem;"></span>
+            <button onclick="mudarSemana(1)" style="background:none; border:1px solid #444; color:#8ab4f8; padding:5px 15px; border-radius:8px; cursor:pointer;">▶</button>
         </div>
         <div id="corpoSemana" class="semana-container"></div>
     </div>
@@ -76,13 +105,13 @@
     <div id="view-notas" class="hidden"><div id="listaNotas"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:10px;" placeholder="O que vai fazer?">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Tarefa ou Nota...">
         <div id="controlesData" style="display:flex; gap:8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
         </div>
-        <button class="btn-main" onclick="adicionar()">SALVAR NA NUVEM</button>
+        <button class="btn-main" onclick="adicionar()">SALVAR AGORA</button>
     </div>
 
     <script type="module">
@@ -131,7 +160,7 @@
             document.getElementById('view-' + tab).classList.remove('hidden');
             document.getElementById('controlesData').style.display = (tab === 'notas') ? 'none' : 'flex';
             renderizarTudo();
-            if(tab === 'agenda') setTimeout(focarProxima, 600); // Atraso para garantir a rolagem
+            if(tab === 'agenda') setTimeout(focarProxima, 600);
         };
 
         function renderizarTudo() {
@@ -174,7 +203,6 @@
 
         function focarProxima() {
             const agora = Date.now();
-            // Busca a primeira não concluída hoje ou no futuro
             const proxima = window.agenda.find(it => !it.concluido && it.timestamp >= (agora - 600000)); 
             if(proxima) {
                 const el = document.getElementById("task-" + proxima.firebaseId);
@@ -189,11 +217,12 @@
         function renderSemana() {
             const corpo = document.getElementById('corpoSemana');
             const start = new Date(dataRefSemana);
-            start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1)); // Começa Segunda
+            // Começa Domingo como na sua foto
+            start.setDate(start.getDate() - start.getDay());
             document.getElementById('labelMes').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
             
             corpo.innerHTML = '';
-            const nomes = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+            const nomes = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
             for (let i = 0; i < 7; i++) {
                 let dia = new Date(start);
@@ -205,8 +234,8 @@
                 const isHoje = diaStr === new Date().toLocaleDateString('pt-BR');
                 
                 col.innerHTML = `<div class="col-header ${isHoje?'hoje':''}">
-                    <span style="font-size:0.7rem; display:block; opacity:0.7;">${nomes[i]}</span>
-                    <span style="font-size:1.3rem; font-weight:bold;">${dia.getDate()}</span>
+                    <span style="font-size:0.6rem; display:block; opacity:0.6;">${nomes[i]}</span>
+                    <span style="font-size:1.2rem; font-weight:bold;">${dia.getDate()}</span>
                 </div>`;
                 
                 window.agenda.filter(it => it.timestamp && new Date(it.timestamp).toLocaleDateString('pt-BR') === diaStr).forEach(it => {
@@ -224,7 +253,7 @@
                 const div = document.createElement('div');
                 div.className = 'nota-card';
                 div.innerHTML = `<span>${nota.name}</span><br>
-                <span onclick="excluir('${nota.firebaseId}')" style="color:#ff6b6b; font-size:0.75rem; cursor:pointer; margin-top:15px; display:inline-block; font-weight:bold;">[ EXCLUIR NOTA ]</span>`;
+                <span onclick="excluir('${nota.firebaseId}')" style="color:#ff6b6b; font-size:0.7rem; cursor:pointer; margin-top:15px; display:inline-block;">[ EXCLUIR ]</span>`;
                 container.appendChild(div);
             });
         }
@@ -248,7 +277,7 @@
         };
 
         window.toggle = function(fId, status) { set(ref(db, 'agenda/' + fId + '/concluido'), !status); };
-        window.excluir = function(fId) { if(confirm("Apagar permanentemente?")) remove(ref(db, 'agenda/' + fId)); };
+        window.excluir = function(fId) { if(confirm("Apagar?")) remove(ref(db, 'agenda/' + fId)); };
 
         const sh = document.getElementById('selHora');
         const sm = document.getElementById('selMin');
