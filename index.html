@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v9</title>
+    <title>Agenda Fabiula - v10</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 350px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -11,24 +11,24 @@
         .status-nuvem { position: fixed; top: 10px; right: 10px; font-size: 10px; padding: 5px 12px; border-radius: 15px; background: #333; color: #8ab4f8; z-index: 2000; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         .status-nuvem.show { opacity: 1; }
         
-        .tabs { display: flex; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; }
-        .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.85rem; }
+        /* ABAS - GARANTINDO QUE APAREÇAM NO PC */
+        .tabs { display: flex !important; background: #1f1f1f; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 900; width: 100%; }
+        .tab { flex: 1; padding: 15px 5px; text-align: center; font-weight: bold; color: #888; cursor: pointer; border: none; background: none; font-size: 0.85rem; display: block !important; }
         .tab.active { color: #8ab4f8; border-bottom: 3px solid #8ab4f8; background: #252525; }
 
         /* LISTA */
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
         .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
         .item.done { opacity: 0.3; border-left-color: #555; }
-        .prox-pendente { border: 2px solid #8ab4f8 !important; box-shadow: 0 0 15px rgba(138, 180, 248, 0.6); }
 
-        /* SEMANA - DIVISÃO TOTAL PC */
+        /* SEMANA - DIVISÃO 14.2% (7 COLUNAS) NO PC */
         .semana-container { display: flex; width: 100%; padding: 5px; background: #121212; justify-content: space-between; }
         .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; overflow: hidden; }
         .col-header { padding: 8px; text-align: center; border-bottom: 1px solid #333; background: #222; }
         .col-header.hoje { background: #2563eb; color: #fff; }
         .task-card { font-size: 0.7rem; padding: 5px; margin: 2px; border-radius: 3px; background: #3b78db; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 2px solid rgba(0,0,0,0.3); }
 
-        /* PROJETOS - CARDS GRANDES */
+        /* PROJETOS */
         .projeto-card { background: #1f1f1f; margin: 15px; padding: 20px; border-radius: 12px; border-top: 6px solid #8b5cf6; }
         .etapa-box { background: #252525; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #333; }
         .checklist-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
@@ -37,7 +37,6 @@
         #listaNotas { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
         .nota-card { background: #2d2d2d; padding: 15px; border-radius: 10px; border-top: 4px solid #fbbc04; }
 
-        /* FOOTER */
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #1f1f1f; padding: 15px; border-top: 1px solid #333; z-index: 1000; }
         input, select { background: #2d2d2d; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 16px; outline: none; }
         .btn-main { background: #8ab4f8; color: #000; border: none; padding: 16px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
@@ -80,7 +79,7 @@
     <div id="view-notas" class="hidden"><div id="listaNotas"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Título...">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Tarefa ou Nota...">
         <div id="controlesData" style="display:flex; gap:8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
@@ -135,9 +134,17 @@
         window.switchTab = function(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('btn-' + tab).classList.add('active');
-            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById('view-' + tab).classList.remove('hidden');
+            const btn = document.getElementById('btn-' + tab);
+            if(btn) btn.classList.add('active');
+            
+            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => {
+                const el = document.getElementById(v);
+                if(el) el.classList.add('hidden');
+            });
+            
+            const target = document.getElementById('view-' + tab);
+            if(target) target.classList.remove('hidden');
+            
             document.getElementById('controlesData').style.display = (tab === 'notas' || tab === 'projetos') ? 'none' : 'flex';
             renderizarTudo();
             if(tab === 'agenda') setTimeout(focarProxima, 800);
@@ -152,6 +159,7 @@
 
         function renderLista() {
             const lista = document.getElementById('minhaLista');
+            if(!lista) return;
             window.agenda.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             lista.innerHTML = '';
             let ultimoDia = "";
@@ -165,7 +173,7 @@
                     ultimoDia = diaLabel;
                 }
                 lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido?'done':''}">
-                    <div class="info"><span class="name ${item.concluido?'riscado':''}">${item.projetoId?'['+item.projetoId+'] ':''}${item.name}</span><br>
+                    <div class="info"><span style="font-weight:bold">${item.projetoId?'['+item.projetoId+'] ':''}${item.name}</span><br>
                     <small style="color:#aaa">${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}</small></div>
                     <div style="display:flex; gap:15px; align-items:center;">
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer">🗑️</span>
@@ -186,6 +194,7 @@
 
         function renderSemana() {
             const corpo = document.getElementById('corpoSemana');
+            if(!corpo) return;
             const start = new Date(dataRefSemana);
             start.setDate(start.getDate() - start.getDay());
             document.getElementById('labelMes').innerText = start.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
@@ -212,6 +221,7 @@
 
         function renderProjetos() {
             const container = document.getElementById('listaProjetos');
+            if(!container) return;
             container.innerHTML = '';
             window.projetos.forEach((proj) => {
                 let docs = proj.docs.map((d, i) => `<div class="checklist-item"><input type="checkbox" ${d.check?'checked':''} onclick="toggleDoc('${proj.firebaseId}', ${i})"> ${d.nome} ${!d.check?`<button onclick="gerarTarefaDoc('${proj.firebaseId}','${d.nome}')" style="font-size:10px; background:#444; color:#fff; border:none; padding:4px; border-radius:4px; cursor:pointer;">Agendar</button>`:''}</div>`).join('');
@@ -221,6 +231,7 @@
 
         function renderNotas() {
             const container = document.getElementById('listaNotas');
+            if(!container) return;
             container.innerHTML = '';
             window.agenda.filter(it => !it.timestamp).forEach(nota => {
                 container.innerHTML += `<div class="nota-card"><span>${nota.name}</span><br><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; font-size:0.7rem; cursor:pointer; margin-top:10px; display:inline-block;">[ REMOVER ]</span></div>`;
