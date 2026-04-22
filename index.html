@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v23</title>
+    <title>Agenda Fabiula - v24</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 380px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -16,12 +16,11 @@
         .riscado { text-decoration: line-through !important; color: #555 !important; }
         .done-global { opacity: 0.25 !important; background: #1a1a1a !important; border-left-color: #333 !important; }
         
-        /* ESTILO PARA ITEM ATRASADO */
-        .atrasado { background: #2d1d1d !important; border-left-color: #f87171 !important; box-shadow: 0 0 10px rgba(248, 113, 113, 0.2); }
+        .atrasado { background: #2d1d1d !important; border-left-color: #f87171 !important; }
         .atrasado .name { color: #fca5a5 !important; }
 
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
-        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; transition: transform 0.2s; }
+        .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
 
         .semana-container { display: flex; width: 100%; padding: 5px; background: #121212; justify-content: space-between; }
         .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; }
@@ -89,8 +88,8 @@
         const auth = getAuth(app);
         
         window.agenda = [];
-        let idEditando = null;
         let currentTab = 'agenda';
+        let primeiraCarga = true;
 
         signInAnonymously(auth);
 
@@ -100,7 +99,11 @@
                     const val = snap.val();
                     window.agenda = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderizarTudo();
-                    if(currentTab === 'agenda') setTimeout(focarProxima, 1000);
+                    
+                    // Se for a primeira vez que a página abre, espera renderizar e pula pro próximo
+                    if(primeiraCarga && currentTab === 'agenda') {
+                        setTimeout(() => { focarProxima(); primeiraCarga = false; }, 1200);
+                    }
                 });
                 onValue(ref(db, 'projetos'), snap => {
                     window.projetos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({...v, firebaseId: id})) : [];
@@ -108,6 +111,21 @@
                 });
             }
         });
+
+        window.focarProxima = function() {
+            const agora = Date.now();
+            const proxima = window.agenda
+                .filter(it => it.timestamp && !it.concluido)
+                .sort((a,b) => a.timestamp - b.timestamp)[0];
+
+            if(proxima) {
+                const el = document.getElementById("task-" + proxima.firebaseId);
+                if(el) {
+                    const offset = el.offsetTop - 150;
+                    window.scrollTo({ top: offset, behavior: 'smooth' });
+                }
+            }
+        };
 
         window.renderLista = function() {
             const lista = document.getElementById('minhaLista');
@@ -125,32 +143,16 @@
                 lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido ? 'done-global' : ''} ${estaAtrasado ? 'atrasado' : ''}">
                     <div style="flex:1">
                         <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                        ${estaAtrasado ? '<br><small style="color:#f87171; font-weight:bold;">⚠️ Pendente (atrasado)</small>' : ''}
+                        ${estaAtrasado ? '<br><small style="color:#f87171; font-weight:bold;">⚠️ Pendente</small>' : ''}
                         <br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small>
                     </div>
                     <div style="display:flex; align-items:center;">
-                        <span onclick="carregarParaEdicao('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">✏️</span>
+                        <span onclick="carregarParaEdicao('${item.firebaseId}')" style="cursor:pointer; margin-right:15px; font-size:1.1rem;">✏️</span>
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>
                 </div>`;
             });
-        };
-
-        window.focarProxima = function() {
-            const agora = Date.now();
-            // Pula para a primeira não concluída (incluindo as atrasadas)
-            const proxima = window.agenda
-                .filter(it => it.timestamp && !it.concluido)
-                .sort((a,b) => a.timestamp - b.timestamp)[0];
-
-            if(proxima) {
-                const el = document.getElementById("task-" + proxima.firebaseId);
-                if(el) {
-                    const offset = el.offsetTop - 150;
-                    window.scrollTo({ top: offset, behavior: 'smooth' });
-                }
-            }
         };
 
         window.switchTab = function(tab) {
@@ -168,18 +170,10 @@
             }
         };
 
-        window.toggleTarefa = function(fId, s) {
-            const item = window.agenda.find(it => it.firebaseId === fId); const nStatus = !s;
-            update(ref(db, `agenda/${fId}`), { concluido: nStatus });
-            if(nStatus && item.repetir && item.repetir !== 'nao' && item.timestamp) {
-                let nData = new Date(item.timestamp);
-                if(item.repetir === 'diario') nData.setDate(nData.getDate() + 1);
-                if(item.repetir === 'semanal') nData.setDate(nData.getDate() + 7);
-                if(item.repetir === 'mensal') nData.setMonth(nData.getMonth() + 1);
-                push(ref(db, 'agenda'), { name: item.name, concluido: false, repetir: item.repetir, timestamp: nData.getTime() });
-            }
-        };
-
+        // --- FUNÇÕES MANTIDAS ---
+        window.renderizarTudo = function() { renderLista(); renderSemana(); renderProjetos(); renderNotas(); };
+        window.toggleTarefa = function(fId, s) { update(ref(db, `agenda/${fId}`), { concluido: !s }); };
+        window.excluirTarefa = function(fId) { if(confirm("Excluir?")) remove(ref(db, `agenda/${fId}`)); };
         window.renderSemana = function() {
             const corpo = document.getElementById('corpoSemana'); const hj = new Date();
             const start = new Date(hj); start.setDate(hj.getDate() - hj.getDay());
@@ -194,7 +188,6 @@
                 corpo.appendChild(col);
             }
         };
-
         window.renderProjetos = function() {
             const container = document.getElementById('listaProjetos');
             container.innerHTML = '<div style="padding: 15px;"><button class="btn-main" style="background:#8b5cf6; color:white;" onclick="novoProjeto()">+ Novo Projeto</button></div>';
@@ -209,61 +202,19 @@
                 </div>`;
             });
         };
-
-        window.adicionarOuSalvar = function() {
-            const nome = document.getElementById('inpNome').value; if(!nome) return;
-            let obj = { name: nome, concluido: false, repetir: document.getElementById('selRepetir').value };
-            if(currentTab !== 'notas' && document.getElementById('inpData').value) {
-                obj.timestamp = new Date(document.getElementById('inpData').value + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime();
-            }
-            if(idEditando) { update(ref(db, `agenda/${idEditando}`), obj); cancelarEdicao(); }
-            else { push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = ''; }
-        };
-
-        window.carregarParaEdicao = function(id) {
-            idEditando = id; const item = window.agenda.find(it => it.firebaseId === id);
-            document.getElementById('inpNome').value = item.name;
-            document.getElementById('selRepetir').value = item.repetir || 'nao';
-            if(item.timestamp) {
-                const d = new Date(item.timestamp);
-                document.getElementById('inpData').value = d.toISOString().split('T')[0];
-                document.getElementById('selHora').value = d.getHours().toString().padStart(2,'0');
-                document.getElementById('selMin').value = d.getMinutes().toString().padStart(2,'0');
-            }
-            document.getElementById('editAviso').classList.remove('hidden');
-            document.getElementById('btnCancelarEdit').classList.remove('hidden');
-            document.getElementById('btnSalvar').innerText = "ATUALIZAR";
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        };
-
-        window.cancelarEdicao = function() {
-            idEditando = null; document.getElementById('inpNome').value = '';
-            document.getElementById('editAviso').classList.add('hidden');
-            document.getElementById('btnCancelarEdit').classList.add('hidden');
-            document.getElementById('btnSalvar').innerText = "SALVAR AGORA";
-        };
-
         window.renderNotas = function() {
             const c = document.getElementById('listaNotas'); c.innerHTML = '';
             window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;">
-                    <span>${nota.name}</span><br><br><button onclick="carregarParaEdicao('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️</button>
-                    <span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer; margin-left:15px;">🗑️</span></div>`;
+                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;"><span>${nota.name}</span><br><br><button onclick="carregarParaEdicao('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️</button><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer; margin-left:15px;">🗑️</span></div>`;
             });
         };
-
-        window.renderizarTudo = function() { renderLista(); renderSemana(); renderProjetos(); renderNotas(); };
-        window.processarFluxo = function(pId, resp) {
-            const q = document.getElementById(`inpQ-${pId}`).value; if(!q) return;
-            const p = window.projetos.find(x => x.firebaseId === pId); if(!p.historico) p.historico = [];
-            p.historico.push({q, a:resp});
-            if(resp==='NÃO') { const d = prompt("Data?"); if(d) push(ref(db, 'agenda'), { name: `[${p.nome}] ${q}`, timestamp: new Date(d+"T09:00:00").getTime(), concluido: false }); }
-            update(ref(db, `projetos/${pId}`), { historico: p.historico });
+        window.adicionarOuSalvar = function() {
+            const nome = document.getElementById('inpNome').value; if(!nome) return;
+            let obj = { name: nome, concluido: false, repetir: document.getElementById('selRepetir').value };
+            if(currentTab !== 'notas' && document.getElementById('inpData').value) { obj.timestamp = new Date(document.getElementById('inpData').value + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime(); }
+            push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = '';
         };
         window.novoProjeto = function() { const n = prompt("Nome:"); if(n) push(ref(db, 'projetos'), { nome: n, historico: [], checkpoint: 'inicio' }); };
-        window.excluirTarefa = function(id) { if(confirm("Excluir?")) remove(ref(db, `agenda/${id}`)); };
-        window.excluirProjeto = function(id) { if(confirm("Excluir?")) remove(ref(db, `projetos/${id}`)); };
-
         const sh = document.getElementById('selHora'); const sm = document.getElementById('selMin');
         for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
         for(let i=0; i<60; i+=5) sm.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}m</option>`;
