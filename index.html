@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v25</title>
+    <title>Agenda Fabiula - v26</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 380px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -50,13 +50,15 @@
     <div id="view-notas" class="hidden"><div id="listaNotas" style="padding:15px; display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap:15px;"></div></div>
 
     <div class="footer">
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Título...">
-        <div style="display:flex; gap:5px; margin-bottom: 8px;">
+        <div id="editAviso" style="color: #fbbc04; font-size: 0.8rem; margin-bottom: 5px;" class="hidden">✍️ Editando tarefa selecionada...</div>
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Tarefa ou Nota...">
+        <div id="controlesData" style="display:flex; gap:5px; margin-bottom: 8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
         </div>
-        <button class="btn-main" onclick="adicionarOuSalvar()">SALVAR AGORA</button>
+        <button id="btnSalvar" class="btn-main" onclick="adicionarOuSalvar()">SALVAR AGORA</button>
+        <button id="btnCancelarEdit" style="background:#444; color:white; border:none; padding:8px; width:100%; border-radius:8px; margin-top:5px; font-size:12px;" class="hidden" onclick="cancelarEdicao()">Cancelar Edição</button>
     </div>
 
     <script type="module">
@@ -79,10 +81,10 @@
         window.agenda = [];
         let currentTab = 'agenda';
         let jaPulouNoInicio = false;
+        let idEditando = null;
 
         signInAnonymously(auth);
 
-        // VIGIA DE ROLAGEM: Rola para o item assim que ele aparece no HTML
         const observer = new MutationObserver(() => {
             if (!jaPulouNoInicio && currentTab === 'agenda' && window.agenda.length > 0) {
                 focarProxima();
@@ -98,11 +100,11 @@
                     window.agenda = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderLista();
                     renderNotas();
+                    renderSemana();
                 });
                 onValue(ref(db, 'projetos'), snap => {
                     window.projetos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderProjetos();
-                    renderSemana();
                 });
             }
         });
@@ -141,11 +143,54 @@
                         <br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small>
                     </div>
                     <div style="display:flex; align-items:center;">
+                        <span onclick="carregarParaEdicao('${item.firebaseId}')" style="cursor:pointer; margin-right:15px; font-size:1.1rem;">✏️</span>
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>
                 </div>`;
             });
+        };
+
+        window.carregarParaEdicao = function(id) {
+            idEditando = id;
+            const item = window.agenda.find(it => it.firebaseId === id);
+            document.getElementById('inpNome').value = item.name;
+            
+            if(item.timestamp) {
+                const d = new Date(item.timestamp);
+                document.getElementById('inpData').value = d.toISOString().split('T')[0];
+                document.getElementById('selHora').value = d.getHours().toString().padStart(2,'0');
+                document.getElementById('selMin').value = d.getMinutes().toString().padStart(2,'0');
+            }
+
+            document.getElementById('editAviso').classList.remove('hidden');
+            document.getElementById('btnCancelarEdit').classList.remove('hidden');
+            document.getElementById('btnSalvar').innerText = "ATUALIZAR";
+        };
+
+        window.cancelarEdicao = function() {
+            idEditando = null;
+            document.getElementById('inpNome').value = '';
+            document.getElementById('editAviso').classList.add('hidden');
+            document.getElementById('btnCancelarEdit').classList.add('hidden');
+            document.getElementById('btnSalvar').innerText = "SALVAR AGORA";
+        };
+
+        window.adicionarOuSalvar = function() {
+            const nome = document.getElementById('inpNome').value; if(!nome) return;
+            let obj = { name: nome, concluido: false };
+            const dt = document.getElementById('inpData').value;
+            if(currentTab !== 'notas' && dt) {
+                obj.timestamp = new Date(dt + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime();
+            }
+
+            if(idEditando) {
+                update(ref(db, `agenda/${idEditando}`), obj);
+                cancelarEdicao();
+            } else {
+                push(ref(db, 'agenda'), obj);
+                document.getElementById('inpNome').value = '';
+            }
         };
 
         window.switchTab = function(tab) {
@@ -154,22 +199,12 @@
             document.getElementById('btn-' + tab).classList.add('active');
             ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById('view-' + tab).classList.remove('hidden');
-            
-            if(tab === 'agenda') {
-                setTimeout(focarProxima, 100);
-            }
+            document.getElementById('controlesData').style.display = (tab === 'notas') ? 'none' : 'flex';
+            if(tab === 'agenda') setTimeout(focarProxima, 100);
         };
 
-        // --- FUNÇÕES BÁSICAS ---
         window.toggleTarefa = function(fId, s) { update(ref(db, `agenda/${fId}`), { concluido: !s }); };
         window.excluirTarefa = function(fId) { if(confirm("Excluir?")) remove(ref(db, `agenda/${fId}`)); };
-        window.adicionarOuSalvar = function() {
-            const nome = document.getElementById('inpNome').value; if(!nome) return;
-            let obj = { name: nome, concluido: false };
-            const dt = document.getElementById('inpData').value;
-            if(currentTab !== 'notas' && dt) { obj.timestamp = new Date(dt + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime(); }
-            push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = '';
-        };
 
         window.renderSemana = function() {
             const corpo = document.getElementById('corpoSemana'); const hj = new Date();
@@ -185,6 +220,7 @@
                 corpo.appendChild(col);
             }
         };
+
         window.renderProjetos = function() {
             const container = document.getElementById('listaProjetos');
             container.innerHTML = '<div style="padding: 15px;"><button class="btn-main" style="background:#8b5cf6; color:white;" onclick="novoProjeto()">+ Novo Projeto</button></div>';
@@ -192,12 +228,18 @@
                 container.innerHTML += `<div class="projeto-card"><strong>${proj.nome}</strong><span onclick="excluirProjeto('${proj.firebaseId}')" style="color:#f44; cursor:pointer; float:right;">Excluir</span></div>`;
             });
         };
+
         window.renderNotas = function() {
             const c = document.getElementById('listaNotas'); c.innerHTML = '';
             window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;"><span>${nota.name}</span><br><br><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer;">🗑️</span></div>`;
+                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;">
+                    <span>${nota.name}</span><br><br>
+                    <button onclick="carregarParaEdicao('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️ Editar</button>
+                    <span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer; margin-left:10px;">🗑️ Excluir</span>
+                </div>`;
             });
         };
+
         window.novoProjeto = function() { const n = prompt("Nome:"); if(n) push(ref(db, 'projetos'), { nome: n }); };
         window.excluirProjeto = function(id) { if(confirm("Excluir projeto?")) remove(ref(db, `projetos/${id}`)); };
 
