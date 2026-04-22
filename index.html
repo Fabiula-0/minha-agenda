@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v24</title>
+    <title>Agenda Fabiula - v25</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 380px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -50,29 +50,18 @@
     <div id="view-notas" class="hidden"><div id="listaNotas" style="padding:15px; display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap:15px;"></div></div>
 
     <div class="footer">
-        <div id="editAviso" style="color: #fbbc04; font-size: 0.8rem; margin-bottom: 5px;" class="hidden">✍️ Editando tarefa...</div>
-        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="O que vamos fazer?">
-        <div id="controlesData" style="display:flex; gap:5px; margin-bottom: 8px;">
+        <input type="text" id="inpNome" style="width:100%; margin-bottom:8px;" placeholder="Título...">
+        <div style="display:flex; gap:5px; margin-bottom: 8px;">
             <input type="date" id="inpData" style="flex:2">
             <select id="selHora" style="flex:1"></select>
             <select id="selMin" style="flex:1"></select>
         </div>
-        <div id="controlesRepetir" style="display:flex; gap:5px; align-items: center; margin-bottom: 5px;">
-            <span style="font-size: 0.8rem; color: #aaa;">Repetir:</span>
-            <select id="selRepetir" style="flex:1; padding: 5px; font-size: 0.8rem;">
-                <option value="nao">Não Repetir</option>
-                <option value="diario">Todo dia</option>
-                <option value="semanal">Toda semana</option>
-                <option value="mensal">Todo mês</option>
-            </select>
-        </div>
-        <button id="btnSalvar" class="btn-main" onclick="adicionarOuSalvar()">SALVAR AGORA</button>
-        <button id="btnCancelarEdit" style="background:#444; color:white; border:none; padding:8px; width:100%; border-radius:8px; margin-top:5px;" class="hidden" onclick="cancelarEdicao()">Cancelar Edição</button>
+        <button class="btn-main" onclick="adicionarOuSalvar()">SALVAR AGORA</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -89,25 +78,31 @@
         
         window.agenda = [];
         let currentTab = 'agenda';
-        let primeiraCarga = true;
+        let jaPulouNoInicio = false;
 
         signInAnonymously(auth);
+
+        // VIGIA DE ROLAGEM: Rola para o item assim que ele aparece no HTML
+        const observer = new MutationObserver(() => {
+            if (!jaPulouNoInicio && currentTab === 'agenda' && window.agenda.length > 0) {
+                focarProxima();
+                jaPulouNoInicio = true; 
+            }
+        });
+        observer.observe(document.getElementById('minhaLista'), { childList: true });
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 onValue(ref(db, 'agenda'), snap => {
                     const val = snap.val();
                     window.agenda = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
-                    renderizarTudo();
-                    
-                    // Se for a primeira vez que a página abre, espera renderizar e pula pro próximo
-                    if(primeiraCarga && currentTab === 'agenda') {
-                        setTimeout(() => { focarProxima(); primeiraCarga = false; }, 1200);
-                    }
+                    renderLista();
+                    renderNotas();
                 });
                 onValue(ref(db, 'projetos'), snap => {
                     window.projetos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderProjetos();
+                    renderSemana();
                 });
             }
         });
@@ -143,11 +138,9 @@
                 lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido ? 'done-global' : ''} ${estaAtrasado ? 'atrasado' : ''}">
                     <div style="flex:1">
                         <span class="name ${item.concluido ? 'riscado' : ''}">${item.name}</span>
-                        ${estaAtrasado ? '<br><small style="color:#f87171; font-weight:bold;">⚠️ Pendente</small>' : ''}
                         <br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small>
                     </div>
                     <div style="display:flex; align-items:center;">
-                        <span onclick="carregarParaEdicao('${item.firebaseId}')" style="cursor:pointer; margin-right:15px; font-size:1.1rem;">✏️</span>
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">🗑️</span>
                         <span style="font-size:1.5rem; cursor:pointer" onclick="toggleTarefa('${item.firebaseId}', ${item.concluido})">${item.concluido ? '✅' : '⬜'}</span>
                     </div>
@@ -163,17 +156,21 @@
             document.getElementById('view-' + tab).classList.remove('hidden');
             
             if(tab === 'agenda') {
-                renderLista();
-                setTimeout(focarProxima, 300);
-            } else {
-                renderizarTudo();
+                setTimeout(focarProxima, 100);
             }
         };
 
-        // --- FUNÇÕES MANTIDAS ---
-        window.renderizarTudo = function() { renderLista(); renderSemana(); renderProjetos(); renderNotas(); };
+        // --- FUNÇÕES BÁSICAS ---
         window.toggleTarefa = function(fId, s) { update(ref(db, `agenda/${fId}`), { concluido: !s }); };
         window.excluirTarefa = function(fId) { if(confirm("Excluir?")) remove(ref(db, `agenda/${fId}`)); };
+        window.adicionarOuSalvar = function() {
+            const nome = document.getElementById('inpNome').value; if(!nome) return;
+            let obj = { name: nome, concluido: false };
+            const dt = document.getElementById('inpData').value;
+            if(currentTab !== 'notas' && dt) { obj.timestamp = new Date(dt + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime(); }
+            push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = '';
+        };
+
         window.renderSemana = function() {
             const corpo = document.getElementById('corpoSemana'); const hj = new Date();
             const start = new Date(hj); start.setDate(hj.getDate() - hj.getDay());
@@ -191,30 +188,19 @@
         window.renderProjetos = function() {
             const container = document.getElementById('listaProjetos');
             container.innerHTML = '<div style="padding: 15px;"><button class="btn-main" style="background:#8b5cf6; color:white;" onclick="novoProjeto()">+ Novo Projeto</button></div>';
-            window.projetos.forEach(proj => {
-                let hist = (proj.historico || []).map(h => `<div style="font-size:0.7rem; border-bottom:1px solid #333; padding:5px;"><b>${h.q}</b>: ${h.a}</div>`).join('');
-                container.innerHTML += `<div class="projeto-card">
-                    <div style="display:flex; justify-content:space-between;"><strong>${proj.nome}</strong><span onclick="excluirProjeto('${proj.firebaseId}')" style="color:#f44; cursor:pointer;">Excluir</span></div>
-                    <div class="pergunta-box"><input type="text" id="inpQ-${proj.firebaseId}" class="inp-pergunta" placeholder="Próxima pergunta...">
-                    <button style="background:#059669; color:white; padding:8px; border:none; border-radius:5px;" onclick="processarFluxo('${proj.firebaseId}', 'SIM')">SIM</button>
-                    <button style="background:#dc2626; color:white; padding:8px; border:none; border-radius:5px; margin-left:5px;" onclick="processarFluxo('${proj.firebaseId}', 'NÃO')">NÃO</button></div>
-                    <details style="margin-top:10px; font-size:0.8rem;"><summary style="cursor:pointer; color:#8ab4f8;">Histórico</summary>${hist}</details>
-                </div>`;
+            (window.projetos || []).forEach(proj => {
+                container.innerHTML += `<div class="projeto-card"><strong>${proj.nome}</strong><span onclick="excluirProjeto('${proj.firebaseId}')" style="color:#f44; cursor:pointer; float:right;">Excluir</span></div>`;
             });
         };
         window.renderNotas = function() {
             const c = document.getElementById('listaNotas'); c.innerHTML = '';
             window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;"><span>${nota.name}</span><br><br><button onclick="carregarParaEdicao('${nota.firebaseId}')" style="background:none; border:none; color:#8ab4f8; cursor:pointer;">✏️</button><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer; margin-left:15px;">🗑️</span></div>`;
+                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04;"><span>${nota.name}</span><br><br><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer;">🗑️</span></div>`;
             });
         };
-        window.adicionarOuSalvar = function() {
-            const nome = document.getElementById('inpNome').value; if(!nome) return;
-            let obj = { name: nome, concluido: false, repetir: document.getElementById('selRepetir').value };
-            if(currentTab !== 'notas' && document.getElementById('inpData').value) { obj.timestamp = new Date(document.getElementById('inpData').value + "T" + document.getElementById('selHora').value + ":" + document.getElementById('selMin').value + ":00").getTime(); }
-            push(ref(db, 'agenda'), obj); document.getElementById('inpNome').value = '';
-        };
-        window.novoProjeto = function() { const n = prompt("Nome:"); if(n) push(ref(db, 'projetos'), { nome: n, historico: [], checkpoint: 'inicio' }); };
+        window.novoProjeto = function() { const n = prompt("Nome:"); if(n) push(ref(db, 'projetos'), { nome: n }); };
+        window.excluirProjeto = function(id) { if(confirm("Excluir projeto?")) remove(ref(db, `projetos/${id}`)); };
+
         const sh = document.getElementById('selHora'); const sm = document.getElementById('selMin');
         for(let i=0; i<24; i++) sh.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}h</option>`;
         for(let i=0; i<60; i+=5) sm.innerHTML += `<option value="${i<10?'0'+i:i}">${i<10?'0'+i:i}m</option>`;
