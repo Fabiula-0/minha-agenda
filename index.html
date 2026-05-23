@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Fabiula - v30</title>
+    <title>Agenda Fabiula - v31</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #121212; margin: 0; padding-bottom: 400px; color: #e0e0e0; scroll-behavior: smooth; }
@@ -20,14 +20,12 @@
         .dia-divisor { background: #222; padding: 10px 15px; margin: 20px 10px 5px 10px; font-weight: bold; font-size: 0.85rem; border-radius: 6px; color: #8ab4f8; border: 1px solid #333; }
         .item { background: #1f1f1f; padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 0 10px 8px 10px; border-left: 4px solid #8ab4f8; }
 
-        /* SEMANA PC */
         .semana-container { display: flex; width: 100%; padding: 5px; background: #121212; justify-content: space-between; }
         .coluna-dia { width: 14.2%; background: #181818; border: 1px solid #252525; display: flex; flex-direction: column; min-height: 450px; }
         .col-header { padding: 8px; text-align: center; border-bottom: 1px solid #333; background: #222; font-size: 0.8rem; }
         .col-header.hoje { background: #2563eb; color: #fff; }
         .task-card { font-size: 0.7rem; padding: 6px; margin: 2px; border-radius: 3px; background: #3b78db; color: #fff; border-left: 2px solid rgba(0,0,0,0.3); }
 
-        /* PROJETOS */
         .projeto-card { background: #1f1f1f; margin: 15px; padding: 20px; border-radius: 12px; border-top: 6px solid #8b5cf6; }
         .pergunta-box { background: #252525; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #333; }
         .inp-pergunta { width: 100%; background: #121212; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
@@ -51,7 +49,7 @@
     <div id="view-agenda"><div id="minhaLista"></div></div>
     <div id="view-semanal" class="hidden"><div id="corpoSemana" class="semana-container"></div></div>
     <div id="view-projetos" class="hidden"><div id="listaProjetos"></div></div>
-    <div id="view-notas" class="hidden"><div id="listaNotas" style="padding:15px;"></div></div>
+    <div id="view-notas" class="hidden"><div id="listaNotas" style="padding:15px; display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap:15px;"></div></div>
 
     <div class="footer">
         <div id="editAviso" style="color: #fbbc04; font-size: 0.8rem; margin-bottom: 5px;" class="hidden">✍️ Editando tarefa...</div>
@@ -98,6 +96,7 @@
         window.projetos = [];
         let idEditando = null;
         let currentTab = 'agenda';
+        let executouFocoInicial = false;
 
         signInAnonymously(auth);
 
@@ -107,11 +106,20 @@
                     const val = snap.val();
                     window.agenda = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     empurrarTarefasAtrasadas();
-                    renderizarTudo();
+                    renderLista();
+                    renderNotas();
+                    renderSemana();
+
+                    // GARANTE A ROLAGEM LOGO APÓS A PRIMEIRA CARGA DE DADOS REAL
+                    if (!executouFocoInicial && window.agenda.length > 0 && currentTab === 'agenda') {
+                        setTimeout(() => {
+                            focarProxima();
+                            executouFocoInicial = true;
+                        }, 500); // Meio segundo seguro para renderizar os elementos
+                    }
                 });
                 onValue(ref(db, 'projetos'), snap => {
-                    const val = snap.val();
-                    window.projetos = val ? Object.entries(val).map(([id, v]) => ({...v, firebaseId: id})) : [];
+                    window.projetos = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({...v, firebaseId: id})) : [];
                     renderProjetos();
                 });
             }
@@ -143,7 +151,7 @@
                 const estaAtrasado = !item.concluido && dt.getTime() < agora;
                 if(diaLabel !== ultimoDia) { lista.innerHTML += `<div class="dia-divisor">${diaLabel}</div>`; ultimoDia = diaLabel; }
                 lista.innerHTML += `<div id="task-${item.firebaseId}" class="item ${item.concluido?'done-global':''} ${estaAtrasado?'atrasado':''}">
-                    <div style="flex:1"><span class="${item.concluido?'riscado':''}">${item.name}</span><br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small></div>
+                    <div style="flex:1"><span class="name ${item.concluido?'riscado':''}">${item.name}</span><br><small style="color:#aaa">${dt.getHours()}h${dt.getMinutes().toString().padStart(2,'0')}</small></div>
                     <div style="display:flex; align-items:center;">
                         <span onclick="carregarParaEdicao('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">✏️</span>
                         <span onclick="excluirTarefa('${item.firebaseId}')" style="cursor:pointer; margin-right:15px;">🗑️</span>
@@ -153,24 +161,50 @@
             });
         };
 
-        window.processarFluxo = function(pId, resp) {
-            const q = document.getElementById(`inpQ-${pId}`).value; 
-            if(!q) return alert("Digite a pergunta!");
-            const p = window.projetos.find(x => x.firebaseId === pId);
-            if(!p.historico) p.historico = [];
-            p.historico.push({q: q, a: resp});
+        window.focarProxima = function() {
+            const proxima = window.agenda
+                .filter(it => it.timestamp && !it.concluido)
+                .sort((a,b) => a.timestamp - b.timestamp)[0];
 
-            if(resp === 'NÃO') {
-                const data = prompt("Agendar para quando?", new Date().toISOString().split('T')[0]);
-                if(data) {
-                    push(ref(db, 'agenda'), {
-                        name: `[${p.nome}] ${q}`,
-                        timestamp: new Date(data + "T09:00:00").getTime(),
-                        concluido: false
-                    });
+            if(proxima) {
+                const el = document.getElementById("task-" + proxima.firebaseId);
+                if(el) {
+                    const offset = el.offsetTop - 150;
+                    window.scrollTo({ top: offset, behavior: 'smooth' });
                 }
             }
-            // CORREÇÃO AQUI: Salvando na pasta correta 'projetos'
+        };
+
+        window.switchTab = function(tab) {
+            currentTab = tab; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('btn-' + tab).classList.add('active');
+            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('controlesData').style.display = (tab === 'notas') ? 'none' : 'flex';
+            document.getElementById('controlesRepetir').style.display = (tab === 'notas') ? 'none' : 'flex';
+            if(tab === 'agenda') setTimeout(focarProxima, 250);
+        };
+
+        window.toggleTarefa = function(fId, s) {
+            const item = window.agenda.find(it => it.firebaseId === fId); const nStatus = !s;
+            update(ref(db, `agenda/${fId}`), { concluido: nStatus });
+            if(nStatus && item.repetir && item.repetir !== 'nao' && item.timestamp) {
+                let nData = new Date(item.timestamp);
+                if(item.repetir === 'diario') nData.setDate(nData.getDate() + 1);
+                if(item.repetir === 'semanal') nData.setDate(nData.getDate() + 7);
+                if(item.repetir === 'mensal') nData.setMonth(nData.getMonth() + 1);
+                push(ref(db, 'agenda'), { name: item.name, concluido: false, repetir: item.repetir, timestamp: nData.getTime() });
+            }
+        };
+
+        window.processarFluxo = function(pId, resp) {
+            const q = document.getElementById(`inpQ-${pId}`).value; if(!q) return alert("Digite a pergunta!");
+            const p = window.projetos.find(x => x.firebaseId === pId); if(!p.historico) p.historico = [];
+            p.historico.push({q: q, a: resp});
+            if(resp === 'NÃO') {
+                const data = prompt("Agendar para quando?", new Date().toISOString().split('T')[0]);
+                if(data) push(ref(db, 'agenda'), { name: `[${p.nome}] ${q}`, timestamp: new Date(data + "T09:00:00").getTime(), concluido: false });
+            }
             update(ref(db, `projetos/${pId}`), { historico: p.historico });
             document.getElementById(`inpQ-${pId}`).value = '';
         };
@@ -190,32 +224,6 @@
                     <details style="margin-top:10px; font-size:0.8rem;"><summary style="cursor:pointer; color:#8ab4f8;">Histórico do Fluxo</summary>${histHTML}</details>
                 </div>`;
             });
-        };
-
-        window.toggleTarefa = function(fId, s) {
-            const item = window.agenda.find(it => it.firebaseId === fId); const nStatus = !s;
-            update(ref(db, `agenda/${fId}`), { concluido: nStatus });
-            if(nStatus && item.repetir && item.repetir !== 'nao' && item.timestamp) {
-                let nData = new Date(item.timestamp);
-                if(item.repetir === 'diario') nData.setDate(nData.getDate() + 1);
-                if(item.repetir === 'semanal') nData.setDate(nData.getDate() + 7);
-                if(item.repetir === 'mensal') nData.setMonth(nData.getMonth() + 1);
-                push(ref(db, 'agenda'), { name: item.name, concluido: false, repetir: item.repetir, timestamp: nData.getTime() });
-            }
-        };
-
-        window.focarProxima = function() {
-            const proxima = window.agenda.filter(it => it.timestamp && !it.concluido).sort((a,b) => a.timestamp - b.timestamp)[0];
-            if(proxima) { const el = document.getElementById("task-" + proxima.firebaseId); if(el) window.scrollTo({ top: el.offsetTop - 150, behavior: 'smooth' }); }
-        };
-
-        window.switchTab = function(tab) {
-            currentTab = tab; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('btn-' + tab).classList.add('active');
-            ['view-agenda', 'view-semanal', 'view-projetos', 'view-notas'].forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById('view-' + tab).classList.remove('hidden');
-            if(tab === 'agenda') setTimeout(focarProxima, 200);
-            renderizarTudo();
         };
 
         window.carregarParaEdicao = function(id) {
@@ -261,7 +269,8 @@
         window.renderNotas = function() {
             const c = document.getElementById('listaNotas'); c.innerHTML = '';
             window.agenda.filter(it => !it.timestamp).forEach(nota => {
-                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04; margin-bottom:10px;"><span>${nota.name}</span><br><br><span onclick="carregarParaEdicao('${nota.firebaseId}')" style="cursor:pointer;">✏️</span><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer; margin-left:15px;">🗑️</span></div>`;
+                c.innerHTML += `<div style="background:#2d2d2d; padding:15px; border-radius:10px; border-top:4px solid #fbbc04; margin-bottom:10px;">
+                    <span>${nota.name}</span><br><br><span onclick="carregarParaEdicao('${nota.firebaseId}')" style="cursor:pointer;">✏️</span><span onclick="excluirTarefa('${nota.firebaseId}')" style="color:#f44; cursor:pointer; margin-left:15px;">🗑️</span></div>`;
             });
         };
         window.renderizarTudo = function() { renderLista(); renderSemana(); renderNotas(); };
